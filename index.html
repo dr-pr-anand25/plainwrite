@@ -148,6 +148,7 @@ body{margin:0}
 img{max-width:100%}
 .engine{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center}
 .engine select{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);padding:7px 10px;font:inherit;font-size:.92rem;max-width:100%}
+.engine input[type=text]{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);padding:7px 10px;font:inherit;font-size:.92rem;width:11rem;max-width:100%}
 .barwrap{flex:1 1 100%;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .barwrap i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
 #status{flex:1 1 100%}
@@ -189,12 +190,15 @@ img{max-width:100%}
     <div class="engine">
       <div class="ctl"><span>Engine</span>
         <div class="seg" role="radiogroup" aria-label="Engine">
-          <label><input type="radio" name="eng" value="ai" checked><span>AI model</span></label>
-          <label><input type="radio" name="eng" value="rules"><span>Fast rules</span></label>
+          <label><input type="radio" name="eng" value="rules" checked><span>Fast rules</span></label>
+          <label><input type="radio" name="eng" value="cloud"><span>Cloud AI</span></label>
+          <label><input type="radio" name="eng" value="ollama"><span>My computer</span></label>
+          <label><input type="radio" name="eng" value="ai"><span>Browser model (experimental)</span></label>
         </div></div>
-      <div class="ctl" id="modelctl"><select id="model" aria-label="Model"></select><button class="btn" id="load" type="button">Load model</button></div>
+      <div class="ctl" id="modelctl" hidden><select id="model" aria-label="Model"></select><button class="btn" id="load" type="button">Load model</button></div>
+      <div class="ctl" id="ollamactl" hidden><input id="omodel" type="text" value="qwen2.5:7b" aria-label="Ollama model name" spellcheck="false"><button class="btn" id="otest" type="button">Test connection</button></div>
       <div class="barwrap" id="barwrap" hidden><i id="bar"></i></div>
-      <span class="note" id="status">Starting AI engine...</span>
+      <span class="note" id="status">Fast rules are the default because they keep your meaning intact. The experimental AI model is small and can change meaning, so only use it if you check every sentence.</span>
     </div>
 
     <div class="panes">
@@ -224,7 +228,7 @@ img{max-width:100%}
       <span class="count" id="count">0 / 2000 words</span>
       <div class="lock"><label for="terms">Keep as written</label><input id="terms" type="text" placeholder="names, brands, keywords (comma separated)"></div>
     </div>
-    <p class="note">Works on text from ChatGPT, Claude, Gemini, DeepSeek and anything else. Everything runs on your device. The AI model is downloaded once from Hugging Face and cached by your browser. Your text is never uploaded.</p>
+    <p class="note">Works on text from ChatGPT, Claude, Gemini, DeepSeek and anything else. Fast rules run entirely in your browser and your text is never uploaded. Your text is only sent anywhere if you choose Cloud AI, and then only to your own server.</p>
   </div>
 
   <section id="why">
@@ -306,7 +310,7 @@ img{max-width:100%}
     <details><summary>How do I make AI text sound human?</summary><p>Paste it into the box, choose a style, press Humanize it. Then read the result aloud, click any sentence that still sounds off, and rephrase it.</p></details>
     <details><summary>Is it free for everyone?</summary><p>Yes. There is no limit on reruns, no credits and no payment screen.</p></details>
     <details><summary>Will it keep my meaning?</summary><p>It swaps wording and reshapes sentences, and it does not add claims. Lock names, numbers and keywords in the "Keep as written" field, and always read the result before you publish it.</p></details>
-    <details><summary>Do I need an account?</summary><p>No. Open the page and paste. Your text stays in your browser.</p></details>
+    <details><summary>Do I need an account?</summary><p>No. Open the page and paste. With Fast rules your text stays in your browser.</p></details>
     <details><summary>Will it get past AI detectors?</summary><p>No tool can promise that, and detectors disagree with each other. The "stock phrases flagged" count under the output shows a concrete thing you can check: how many telltale phrases the rewrite removed.</p></details>
   </section>
 
@@ -318,6 +322,7 @@ img{max-width:100%}
   </footer>
 </main>
 
+<script src="config.js"></script>
 <script>
 (function(){
 "use strict";
@@ -575,7 +580,7 @@ function updateCount(){
 function run(bump){
   if(bump)runSeed++;
   selected=-1;
-  if(engine()==="ai"&&window.PW_LLM){llmRun();return}
+  if(engine()==="cloud"||engine()==="ollama"||(engine()==="ai"&&window.PW_LLM)){llmRun();return}
   build();render();report();
 }
 
@@ -632,8 +637,8 @@ function rulesFallback(src,o,L,seed){
 var lastReason="";
 async function rewrite(src,o,L,extra,avoid){
   var maxTok=Math.min(512,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
-  for(var a=0;a<3;a++){
-    var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.35+0.2*a});
+  for(var a=0;a<(engine()==="ollama"?2:3);a++){
+    var raw=engine()==="cloud"?await cloudGen(src,o,L,extra,0.4+0.2*a):engine()==="ollama"?await ollamaGen(src,o,L,extra,0.3+0.2*a):await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.35+0.2*a});
     var out=cleanOut(raw),why=valid(src,out,o,L);
     if(!why&&avoid&&overlap(out,avoid)>0.9&&overlap(avoid,out)>0.9)why="same as before";
     console.log("[plainwrite] attempt "+(a+1)+(why?" rejected ("+why+")":" accepted"),{src:src,out:out});
@@ -656,20 +661,20 @@ async function loadModel(){
     $("load").disabled=false;setStatus("Could not load the model ("+(e&&e.message?e.message:e)+"). Switch to Fast rules, or try another browser.");throw e;
   }finally{$("barwrap").hidden=true}
 }
-function groups(text){
+function groups(text,lim){lim=lim||0;
   var us=split(text),res=[],cur=null;
   us.forEach(function(u){
     var w=words(u.src);
-    if(cur&&cur.para===u.para&&cur.w+w<=0){cur.src+=" "+u.src;cur.w+=w}
+    if(cur&&cur.para===u.para&&cur.w+w<=lim){cur.src+=" "+u.src;cur.w+=w}
     else{cur={src:u.src,para:u.para,w:w};res.push(cur)}
   });
   return res;
 }
 async function llmRun(){
-  var btn=$("run"),L=locks(),o=opts(0),text=$("in").value,gs=groups(text),fb=0;
+  var btn=$("run"),L=locks(),o=opts(0),text=$("in").value,gs=groups(text,engine()==="cloud"?110:(engine()==="ollama"?60:0)),fb=0;
   btn.disabled=true;$("rerun").disabled=true;btn.textContent="Working...";
   try{
-    await loadModel();
+    if(engine()==="ai")await loadModel();
     var nu=[];
     for(var i=0;i<gs.length;i++){
       setStatus("Rewriting passage "+(i+1)+" of "+gs.length+"...");
@@ -681,7 +686,7 @@ async function llmRun(){
     units=nu;render();report();
     setStatus((gs.length-fb)+" of "+gs.length+" passages were rewritten by the model."+(fb?" "+fb+" were rejected by the safety check (last reason: "+lastReason+") and got the fast rules instead.":"")+" Read the result against your original before you use it.");
   }catch(e){
-    setStatus("The AI model failed ("+(e&&e.message?e.message:e)+"). Used the fast rules instead.");
+    setStatus("The AI engine failed ("+(e&&e.message?e.message:e)+"). Used the fast rules instead.");
     build();render();report();
   }finally{btn.textContent="Humanize it";updateCount()}
 }
@@ -701,17 +706,63 @@ async function llmLine(u){
   }catch(e){setStatus("Could not rewrite that line: "+(e&&e.message?e.message:e))}
   finally{b.textContent="Rephrase line";render();report()}
 }
+async function cloudGen(text,o,L,extra,temp){
+  var url=(window.PW_CONFIG&&window.PW_CONFIG.cloudUrl)||"";
+  if(!url)throw new Error("Cloud AI is not set up yet. Add your server address to config.js (see the README)");
+  var res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,style:o.style,length:o.len,keep:L,extra:extra||"",temperature:temp})});
+  if(!res.ok){var m="";try{m=(await res.json()).error}catch(e){}throw new Error("server "+res.status+(m?": "+m:""))}
+  var j=await res.json();return String(j.text||"");
+}
+var CSYS="You are a careful editor. Rewrite the text so it reads like a thoughtful human wrote it, not an AI. Preserve the exact meaning, the level of certainty and hedging, every number, symbol, equation, citation, name, abbreviation and technical term. Do not add claims, examples or explanations, and do not drop information. Change the sentence structure and word choice in a natural way: vary sentence length, reorder clauses, merge or split sentences where it reads better, prefer plain direct wording, and avoid stock AI phrases such as delve, tapestry, leverage, furthermore, moreover, in conclusion, pivotal, seamless. Do not use em dashes, lists, headings or quotation marks around the result. Keep paragraph breaks. Output only the rewritten text.";
+function cloudMessages(text,o,L,extra){
+  var st={casual:"casual and conversational, contractions allowed",creative:"creative, vivid, varied rhythm",academic:"academic, precise and measured, no contractions",formal:"formal and professional, no contractions"}[o.style];
+  var ln={short:"about 25% shorter, cutting filler but no facts",std:"about the same length",long:"about 25% longer, adding natural connecting words but no new facts"}[o.len];
+  return[{role:"system",content:CSYS},{role:"user",content:"Style: "+st+".\nLength: "+ln+".\n"+(L.length?"Keep these terms exactly as written: "+L.join(", ")+".\n":"")+(extra?extra+"\n":"")+"\nText:\n"+text}];
+}
+async function ollamaGen(text,o,L,extra,temp){
+  var m=($("omodel").value||"qwen2.5:7b").trim(),res;
+  try{res=await fetch("http://localhost:11434/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:m,messages:cloudMessages(text,o,L,extra),temperature:temp,stream:false})})}
+  catch(e){throw new Error("cannot reach Ollama on this computer. Is it running, and did you set OLLAMA_ORIGINS? See the README")}
+  if(!res.ok){var t="";try{t=(await res.text()).slice(0,160)}catch(e){}throw new Error("Ollama "+res.status+": "+t)}
+  var j=await res.json();return String((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"");
+}
+async function ollamaTest(){
+  var m=($("omodel").value||"qwen2.5:7b").trim();setStatus("Checking Ollama...");
+  try{
+    var res=await fetch("http://localhost:11434/api/tags");if(!res.ok)throw new Error("status "+res.status);
+    var names=((await res.json()).models||[]).map(function(x){return x.name});
+    var has=names.some(function(n){return n===m||n.split(":")[0]===m||n===m+":latest"});
+    setStatus(has?"Connected. The model "+m+" is installed. Press Humanize it.":"Ollama is running, but "+m+" is not installed. Open PowerShell and run: ollama pull "+m+(names.length?"  (installed now: "+names.join(", ")+")":""));
+  }catch(e){setStatus("Cannot reach Ollama on this computer. Install and start it, then set OLLAMA_ORIGINS to this website address and restart Ollama (see the README). If Chrome asks to allow access to devices on your network, choose Allow.")}
+}
+async function cloudLine(u){
+  var b=$("line"),o=opts(selected),L=locks();b.disabled=true;b.textContent="Rewriting...";
+  try{
+    var r=await rewrite(u.out,o,L,"Reword this single sentence differently from the current wording. Keep the same meaning.",u.out);
+    u.out=r.text;
+    setStatus(r.ai?"That sentence was rewritten by the cloud model.":"The cloud rewrite was rejected ("+lastReason+"), so the fast rules were used for that sentence.");
+  }catch(e){setStatus("Could not rewrite that sentence: "+(e&&e.message?e.message:e))}
+  finally{b.textContent="Rephrase line";render();report()}
+}
+function engineNote(){
+  var e=engine();
+  if(e==="cloud")return(window.PW_CONFIG&&window.PW_CONFIG.cloudUrl)?"Cloud AI: your text is sent to your own server and on to the AI provider you configured. Numbers and terms are checked, but still read every sentence.":"Cloud AI is not set up yet. Add your server address to config.js (see the README). Until then, Fast rules are used.";
+  if(e==="ollama")return"My computer: your text goes only to Ollama on this computer, nowhere else. Without a graphics card a 7B model is slow, roughly a minute per short passage, and results should still be read against your original.";
+  if(e==="ai")return"Experimental: a small model can change meaning or produce odd sentences. Check every sentence against your original. The model downloads once when you press Humanize it or Load model.";
+  return"Fast rules keep your meaning intact and run entirely in your browser. They swap stock phrases, reorder clauses and vary sentence length.";
+}
 function initLLM(){
   var Lm=window.PW_LLM,sel=$("model");if(!Lm)return;
   sel.textContent="";
   Lm.models.forEach(function(m){var op=document.createElement("option");op.value=m.id;op.textContent=m.label;if(m.needsGPU&&!Lm.hasGPU)op.disabled=true;sel.appendChild(op)});
-  setStatus("AI engine ready. The model downloads once when you press Humanize it or Load model. "+(Lm.hasGPU?"Your browser supports WebGPU, so it will run on the GPU.":"No WebGPU here, so it will run on the CPU and be slower."));
+  if(engine()==="ai")setStatus("Experimental: a small model can change meaning or produce odd sentences. Check every sentence against your original. The model downloads once when you press Humanize it or Load model.");
 }
 window.addEventListener("pw-llm-ready",initLLM);
 window.addEventListener("pw-llm-fail",function(){setStatus("The AI engine could not be downloaded, so Fast rules are being used.");$("modelctl").hidden=true});
+$("otest").addEventListener("click",ollamaTest);
 $("load").addEventListener("click",function(){loadModel().catch(function(){})});
 $("model").addEventListener("change",function(){var Lm=window.PW_LLM;if(Lm&&Lm.isLoaded())Lm.unload();$("load").disabled=false;$("load").textContent="Load model"});
-document.querySelectorAll('input[name="eng"]').forEach(function(r){r.addEventListener("change",function(){$("modelctl").hidden=engine()!=="ai"})});
+document.querySelectorAll('input[name="eng"]').forEach(function(r){r.addEventListener("change",function(){$("modelctl").hidden=engine()!=="ai";$("ollamactl").hidden=engine()!=="ollama";setStatus(engineNote())})});
 if(window.PW_LLM)initLLM();
 
 /* ---------- events ---------- */
@@ -734,7 +785,7 @@ function pickUnit(t){
 $("out").addEventListener("click",function(e){pickUnit(e.target)});
 $("out").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();pickUnit(e.target)}});
 $("line").addEventListener("click",function(){
-  if(selected<0)return;var u=units[selected];if(u.ai&&engine()==="ai"&&window.PW_LLM){llmLine(u);return}
+  if(selected<0)return;var u=units[selected];if(u.ai&&(engine()==="cloud"||engine()==="ollama")){cloudLine(u);return}if(u.ai&&engine()==="ai"&&window.PW_LLM){llmLine(u);return}
   var before=u.out,tries=0;
   do{u.seed+=104729;u.out=transform(u.src,opts(selected),u.seed,locks());tries++}while(u.out===before&&tries<6);
   render();report();

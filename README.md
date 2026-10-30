@@ -1,27 +1,63 @@
 # Plainwrite
 
-A free AI text humanizer that runs entirely in the browser. Created by P. Rameswara Anand, Research Scholar, Anurag University, Hyderabad 500088.
+A free AI text humanizer. Created by P. Rameswara Anand, Research Scholar, Anurag University, Hyderabad 500088.
 
-## How it works
-- The page loads [Transformers.js](https://github.com/huggingface/transformers.js) from a CDN and downloads a small open model (Qwen2.5, ONNX build) from Hugging Face the first time someone presses "Humanize it". The browser caches it afterwards.
-- Text is split into passages of up to 80 words. Each passage is rewritten by the model on the user's own device (WebGPU if available, otherwise CPU/WASM).
-- Safety checks reject any rewrite that drops a number, an acronym, a camelCase name or a "Keep as written" term, or that is far too long or short. Those passages fall back to the built-in rules engine.
-- "Fast rules" mode skips the model and uses the rules engine only.
-- No text is sent to any server.
+The page has three engines. **Fast rules** is the default.
 
-## Deploy on GitHub Pages
-1. Create a new public repository, for example `plainwrite`.
-2. Upload `index.html`, `app.js` and `README.md` to the repository root (Add file, then Upload files).
-3. Open Settings, then Pages. Under "Build and deployment" choose "Deploy from a branch", branch `main`, folder `/ (root)`, and save.
-4. After a minute the site is live at `https://<your-username>.github.io/plainwrite/`. Share that link.
+| Engine | Where text goes | Quality | Setup |
+|---|---|---|---|
+| Fast rules (default) | Stays in the browser | Modest, never changes meaning. Swaps stock phrases and wordy verbs, reorders clauses, merges or splits sentences, removes em dashes. Numbers, acronyms and terms are never touched. | None |
+| Cloud AI | Your own server, then the AI provider you pick | Best. A real language model rewrites each passage. Results are checked for dropped numbers and terms, and rejected passages fall back to Fast rules. | Option B below |
+| My computer (Ollama) | Only to Ollama on your own computer | Good for a 7B model, much better than the browser model. Slow without a graphics card. Same safety checks as Cloud AI. | Option C below |
+| Browser model (experimental) | Stays in the browser | Poor. A 0.5B model downloaded into the browser can change meaning. Check every sentence. | None |
+
+## Files
+- `index.html`: the whole site
+- `config.js`: where you put your Cloud AI server address (empty = Cloud AI off)
+- `worker.js`: the small server for Cloud AI (Cloudflare Worker)
+- `app.js`: loader for the experimental local model
+
+## Option A: Fast rules only (GitHub Pages)
+1. Upload `index.html`, `config.js`, `app.js` and `README.md` to your repository root.
+2. Settings, Pages, Deploy from a branch, `main`, `/ (root)`.
+3. The site is at `https://dr-pr-anand25.github.io/plainwrite/`.
+
+## Option B: add Cloud AI
+You need an account with an AI provider that has an OpenAI-compatible API (for example Google AI Studio for Gemini, Groq, OpenRouter or OpenAI). Check the provider's current free-tier limits and pick a current model name from its documentation.
+
+1. Get an API key from the provider. Note its base URL, for example:
+   - Google Gemini: `https://generativelanguage.googleapis.com/v1beta/openai`
+   - Groq: `https://api.groq.com/openai/v1`
+   - OpenRouter: `https://openrouter.ai/api/v1`
+2. Create a free Cloudflare account. Go to Workers and Pages, Create, Create Worker. Paste in the contents of `worker.js` and Deploy.
+3. Open the Worker, Settings, Variables and Secrets. Add:
+   - `BASE_URL`: the base URL from step 1
+   - `MODEL`: a current model name from the provider
+   - `ALLOWED_ORIGIN`: `https://dr-pr-anand25.github.io`
+   - `API_KEY`: your key, added as a **Secret**
+4. Copy the Worker address (it looks like `https://something.your-name.workers.dev`).
+5. Edit `config.js` in your repository and put that address in `cloudUrl`. Commit.
+6. Open the site, choose **Cloud AI**, and press Humanize it.
+
+### Things to know about Cloud AI
+- Your text is sent to your Worker and then to the AI provider. Check the provider's data policy before using unpublished work.
+- `ALLOWED_ORIGIN` stops other websites from using your Worker in a browser, but it does not stop a determined person who knows the address. Do not share the Worker address, and set a spending limit with your provider.
+- Each request is limited to 300 words. The page sends text in passages of up to 110 words.
+- If the Worker is down or the key is wrong, the page shows the error and falls back to Fast rules.
+
+## Option C: My computer (Ollama), free and fully private
+Works only on the computer where Ollama is installed. Your text never leaves it.
+
+1. Install Ollama for Windows from https://ollama.com and let it start.
+2. Open PowerShell and download a model (one time):
+   - `ollama pull qwen2.5:7b` (about 4.7 GB, best quality, needs roughly 6 GB of free memory)
+   - or `ollama pull qwen2.5:3b` (about 2 GB, faster, weaker)
+3. Allow the website to talk to Ollama. In PowerShell run:
+   `setx OLLAMA_ORIGINS "https://dr-pr-anand25.github.io"`
+   Then quit Ollama from the system tray and start it again.
+4. Close heavy browser tabs before running the 7B model.
+5. Open the site, choose **My computer**, type the model name (for example `qwen2.5:7b`) and press **Test connection**. It tells you what is missing. If Chrome asks to allow access to devices on your network, choose Allow.
+6. Press Humanize it. Without a graphics card expect a minute or more per short passage.
 
 ## Test locally
 Run `python3 -m http.server 8000` in this folder and open http://localhost:8000.
-
-## Changing the model
-Edit the `MODELS` list at the top of `app.js`. Any `onnx-community` text-generation model that has `q4f16` (GPU) and `q8` or `q4` (CPU) files will work. The Transformers.js version is pinned in the `CDN` line.
-
-## Limits to know
-- First use downloads about 0.5 GB (the 0.5B model) or about 1 GB (the 1.5B model).
-- Small models are weaker than hosted ones. Always read the result against the original before using it, especially for papers.
-- The 1.5B model needs a browser with WebGPU (recent Chrome or Edge).
