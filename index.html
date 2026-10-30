@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plainwrite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one calm column. Tool sits directly under the headline, then proof, then reference sections.
+   Palette: cobalt accent on a cool paper neutral; amber only for "flagged phrase" signals. */
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --fg:#151a2c; --muted:#5a6178; --line:#dfe2ee;
+  --accent:#2f4bd8; --accent-fg:#ffffff; --accent-soft:#e6eafc;
+  --flag:#a15c00; --flag-soft:#fdf0d8; --ok:#1c7a4b;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1120; --surface:#161a2e; --fg:#e9ecf8; --muted:#9aa2c0; --line:#2a3050;
+  --accent:#8196ff; --accent-fg:#0e1120; --accent-soft:#222a55;
+  --flag:#f0b25a; --flag-soft:#3a2d12; --ok:#6fd6a0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1120; --surface:#161a2e; --fg:#e9ecf8; --muted:#9aa2c0; --line:#2a3050;
+  --accent:#8196ff; --accent-fg:#0e1120; --accent-soft:#222a55;
+  --flag:#f0b25a; --flag-soft:#3a2d12; --ok:#6fd6a0; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.02em}
+h1{font-size:clamp(2.3rem,6vw,4rem);font-weight:800}
+h2{font-size:clamp(1.6rem,3.6vw,2.3rem);font-weight:700}
+h3{font-size:1.15rem;font-weight:700;letter-spacing:-.01em}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.nav{display:flex;align-items:center;gap:20px;padding-block:14px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:9px;font:800 1.25rem var(--display);color:var(--fg);text-decoration:none;letter-spacing:-.02em}
+.logo i{width:26px;height:26px;border-radius:8px 8px 8px 2px;background:var(--accent);display:inline-block}
+.nav nav{display:flex;gap:18px;margin-left:auto;flex-wrap:wrap}
+.nav nav a{color:var(--muted);text-decoration:none;font-weight:500;font-size:.95rem}
+.nav nav a:hover{color:var(--fg)}
+.theme{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;font:500 .85rem var(--body);cursor:pointer}
+.hero{padding-block:48px 28px;display:grid;gap:14px}
+.hero p.sub{font-size:1.2rem;color:var(--muted);max-width:44ch}
+/* tool */
+.tool{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 30px -18px rgba(30,40,110,.35);display:grid;gap:16px}
+.controls{display:flex;gap:18px 28px;flex-wrap:wrap;align-items:center}
+.ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ctl>span{font:500 .75rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:block;padding:7px 13px;font-weight:500;font-size:.95rem;color:var(--muted)}
+.seg input:checked+span{background:var(--accent);color:var(--accent-fg)}
+.seg input:focus-visible+span{outline:3px solid var(--accent);outline-offset:-3px}
+.panes>*,.tool>*{min-width:0}
+.panes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pane{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--bg);min-width:0}
+.pane-h{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap;min-height:48px}
+.pane-h b{font:500 .75rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:auto}
+.pane textarea,.out{flex:1;min-height:280px;max-height:520px;overflow:auto;padding:14px;border:0;background:transparent;color:var(--fg);font:1rem/1.65 var(--body);resize:vertical;width:100%}
+.pane textarea:focus-visible{outline:none}
+.pane:focus-within{border-color:var(--accent)}
+.out .ph{color:var(--muted)}
+.out p{margin:0 0 .9em}
+.u{cursor:pointer;border-radius:4px;padding:1px 0;transition:background .15s}
+.u:hover{background:var(--accent-soft)}
+.u.sel{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft)}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:9px;padding:6px 11px;font:500 .88rem var(--body);cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.go{background:var(--accent);color:var(--accent-fg);border:0;border-radius:12px;padding:13px 26px;font:700 1.05rem var(--display);cursor:pointer;letter-spacing:-.01em}
+.go:hover{filter:brightness(1.08)}
+.go:disabled{opacity:.5;cursor:default}
+.foot{display:flex;gap:14px 20px;align-items:center;flex-wrap:wrap}
+.count{font:500 .85rem var(--mono);color:var(--muted)}
+.count.over{color:var(--flag)}
+.lock{display:flex;gap:8px;align-items:center;flex:1;min-width:220px}
+.lock label{font:500 .75rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+.lock input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);padding:7px 10px;font:inherit;font-size:.95rem}
+.report{display:none;gap:10px 18px;flex-wrap:wrap;align-items:center;padding:10px 14px;border-radius:10px;background:var(--bg);border:1px dashed var(--line);font-size:.95rem}
+.report.on{display:flex}
+.chip{font:500 .8rem var(--mono);padding:3px 9px;border-radius:999px}
+.chip.bad{background:var(--flag-soft);color:var(--flag)}
+.chip.good{background:var(--accent-soft);color:var(--ok)}
+.note{font-size:.88rem;color:var(--muted)}
+/* sections */
+section{padding-block:64px 8px}
+.sec-h{display:grid;gap:10px;margin-bottom:28px;max-width:60ch}
+.sec-h p{color:var(--muted)}
+.chat{display:grid;gap:10px;max-width:640px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.b{padding:10px 14px;border-radius:14px;max-width:85%;font-size:.98rem}
+.b.me{background:var(--accent);color:var(--accent-fg);justify-self:end;border-bottom-right-radius:4px}
+.b.ai{background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.cmp{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:center}
+.cmp .pull{font:700 clamp(1.4rem,3vw,1.9rem)/1.2 var(--display);letter-spacing:-.02em}
+.cmp .pull em{font-style:normal;color:var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:8px;align-content:start}
+.card p{color:var(--muted);font-size:.98rem}
+.card .k{font:500 .75rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;counter-reset:s}
+.step{border-top:3px solid var(--accent);padding-top:14px;display:grid;gap:6px;counter-increment:s}
+.step h3::before{content:counter(s) ". ";color:var(--accent)}
+.step p{color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px}
+th,td{text-align:left;padding:14px 18px;vertical-align:top;border-bottom:1px solid var(--line);font-size:.98rem}
+th{font:500 .75rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.band{margin-top:64px;background:var(--accent);color:var(--accent-fg);border-radius:20px;padding:36px 28px;display:grid;gap:26px}
+.band h2{color:inherit}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px}
+.stat b{display:block;font:800 clamp(2rem,5vw,3rem)/1 var(--display);letter-spacing:-.03em}
+.stat span{font-size:.95rem;opacity:.9}
+.band a.go{background:var(--accent-fg);color:var(--accent);text-decoration:none;justify-self:start}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 18px}
+details+details{margin-top:10px}
+summary{cursor:pointer;padding:16px 0;font:700 1.05rem var(--display);list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--accent);font-size:1.4rem;line-height:1}
+details[open] summary::after{content:"\2212"}
+details p{padding-bottom:16px;color:var(--muted);max-width:70ch}
+footer{margin-top:72px;border-top:1px solid var(--line);padding-block:28px 40px;display:flex;gap:14px 24px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:.92rem}
+footer a{color:var(--muted)}
+footer .tag{margin-right:auto}
+@media (max-width:760px){
+  .seg span{padding:7px 9px;font-size:.9rem}
+  .controls{gap:12px}
+  .panes{grid-template-columns:1fr}
+  .pane textarea,.out{min-height:200px}
+  .cmp{grid-template-columns:1fr}
+  .nav nav{display:none}
+  .theme{margin-left:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+:root{color-scheme:light}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+.engine{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center}
+.engine select{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);padding:7px 10px;font:inherit;font-size:.92rem;max-width:100%}
+.barwrap{flex:1 1 100%;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.barwrap i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+#status{flex:1 1 100%}
+</style>
+</head>
+<body>
+
+
+<header class="top"><div class="wrap nav">
+  <a class="logo" href="#top"><i></i>Plainwrite</a>
+  <nav aria-label="Sections"><a href="#why">Why humanize</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#faq">FAQ</a></nav>
+  <button class="theme" id="theme" type="button">Theme</button>
+</div></header>
+
+<main class="wrap" id="top">
+  <div class="hero">
+    <h1>Make AI text sound like a person wrote it.</h1>
+    <p class="sub">Paste a draft from any chatbot, pick a style, and get a version with natural rhythm and plain wording. Free, no account.</p>
+    <p style="font:500 .95rem var(--body);color:var(--muted)">Created by <b style="color:var(--fg)">P. Rameswara Anand</b>, Research Scholar, Anurag University, Hyderabad 500088</p>
+  </div>
+
+  <div class="tool" id="tool">
+    <div class="controls">
+      <div class="ctl"><span>Style</span>
+        <div class="seg" role="radiogroup" aria-label="Style">
+          <label><input type="radio" name="style" value="academic"><span>Academic</span></label>
+          <label><input type="radio" name="style" value="casual" checked><span>Casual</span></label>
+          <label><input type="radio" name="style" value="creative"><span>Creative</span></label>
+          <label><input type="radio" name="style" value="formal"><span>Formal</span></label>
+        </div></div>
+      <div class="ctl"><span>Length</span>
+        <div class="seg" role="radiogroup" aria-label="Length">
+          <label><input type="radio" name="len" value="short"><span>Shorten</span></label>
+          <label><input type="radio" name="len" value="std" checked><span>Standard</span></label>
+          <label><input type="radio" name="len" value="long"><span>Expand</span></label>
+        </div></div>
+    </div>
+
+    <div class="engine">
+      <div class="ctl"><span>Engine</span>
+        <div class="seg" role="radiogroup" aria-label="Engine">
+          <label><input type="radio" name="eng" value="ai" checked><span>AI model</span></label>
+          <label><input type="radio" name="eng" value="rules"><span>Fast rules</span></label>
+        </div></div>
+      <div class="ctl" id="modelctl"><select id="model" aria-label="Model"></select><button class="btn" id="load" type="button">Load model</button></div>
+      <div class="barwrap" id="barwrap" hidden><i id="bar"></i></div>
+      <span class="note" id="status">Starting AI engine...</span>
+    </div>
+
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-h"><b>Your text</b>
+          <button class="btn" id="sample" type="button">Try a sample</button>
+          <button class="btn" id="upload" type="button">Upload .txt</button>
+          <button class="btn" id="clear" type="button">Clear</button>
+          <input type="file" id="file" accept=".txt,.md,text/plain" hidden>
+        </div>
+        <textarea id="in" aria-label="Your AI text" placeholder="Paste your AI text to get started"></textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-h"><b>Human version</b>
+          <button class="btn" id="line" type="button" disabled>Rephrase line</button>
+          <button class="btn" id="rerun" type="button" disabled>Rerun</button>
+          <button class="btn" id="copy" type="button" disabled>Copy</button>
+        </div>
+        <div class="out" id="out" aria-live="polite"><span class="ph">Your human version lands here. Click any sentence afterwards to rephrase just that line.</span></div>
+      </div>
+    </div>
+
+    <div class="report" id="report"></div>
+
+    <div class="foot">
+      <button class="go" id="run" type="button">Humanize it</button>
+      <span class="count" id="count">0 / 2000 words</span>
+      <div class="lock"><label for="terms">Keep as written</label><input id="terms" type="text" placeholder="names, brands, keywords (comma separated)"></div>
+    </div>
+    <p class="note">Works on text from ChatGPT, Claude, Gemini, DeepSeek and anything else. Everything runs on your device. The AI model is downloaded once from Hugging Face and cached by your browser. Your text is never uploaded.</p>
+  </div>
+
+  <section id="why">
+    <div class="cmp">
+      <div class="sec-h" style="margin:0">
+        <h2>Why fight a paraphrase prompt? Humanize the text instead.</h2>
+        <p>Asking a chatbot to "sound human" usually gets you the same stock phrases in a new order. A dedicated pass targets those phrases and the flat rhythm directly.</p>
+        <p class="pull">Skip the prompt. Make it read <em>like you.</em></p>
+      </div>
+      <div class="chat" aria-label="Example chat">
+        <div class="b me">Make this sound more human: "We leverage cutting-edge tools to seamlessly elevate your workflow."</div>
+        <div class="b ai">Certainly! Here is a refined version: "We utilize state-of-the-art solutions to effortlessly enhance your workflow."</div>
+        <div class="b me">That's worse. It still sounds like a robot.</div>
+        <div class="b ai">Apologies! Let me delve deeper into a more nuanced rendering...</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>How a humanizer helps you</h2><p>Readers notice stock phrasing within a sentence or two. Removing it protects the thing you actually care about.</p></div>
+    <div class="cards">
+      <div class="card"><span class="k">Reputation</span><h3>Be read, not suspected</h3><p>Your reader judges the argument instead of wondering who or what wrote it.</p></div>
+      <div class="card"><span class="k">Voice</span><h3>Stand out in the feed</h3><p>Varied sentence length and direct wording keep your writing from blending into everyone else's.</p></div>
+      <div class="card"><span class="k">Engagement</span><h3>Keep people reading</h3><p>A looser cadence and clear statements get readers to the last paragraph and make them share it.</p></div>
+      <div class="card"><span class="k">Marketing</span><h3>Copy that converts</h3><p>Tighter sentences hold your keywords in place while pushing the reader toward the next click.</p></div>
+      <div class="card"><span class="k">English</span><h3>Smoother for non-native writers</h3><p>Stiff or slightly off phrasing gets replaced with wording a native reader expects.</p></div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="sec-h"><h2>Humanize AI text in three steps</h2></div>
+    <div class="steps">
+      <div class="step"><h3>Paste it</h3><p>Drop in your text, upload a .txt file, or load the sample to see how it behaves.</p></div>
+      <div class="step"><h3>Tweak it, or don't</h3><p>Choose a style and a length, and list any names or keywords that must stay exactly as written.</p></div>
+      <div class="step"><h3>Humanize it</h3><p>Results appear instantly. Click a sentence to rephrase it, or rerun the whole text for a fresh take.</p></div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="sec-h"><h2>What the tool does</h2></div>
+    <div class="cards">
+      <div class="card"><span class="k">Styles</span><h3>Four writing styles</h3><p>Academic, casual, creative and formal each change contractions, connectors and sentence length.</p></div>
+      <div class="card"><span class="k">Length</span><h3>Shorter or longer</h3><p>Trim filler and hedges, or add natural connecting phrases when a draft feels thin.</p></div>
+      <div class="card"><span class="k">Locking</span><h3>Protected terms</h3><p>Brand names, product terms and SEO keywords pass through untouched.</p></div>
+      <div class="card"><span class="k">Precision</span><h3>Single-line rephrasing</h3><p>One sentence still sounds off? Select it and rewrite only that line.</p></div>
+      <div class="card"><span class="k">Reruns</span><h3>Unlimited reruns</h3><p>Every run varies the wording, so you can keep going until it sounds right.</p></div>
+      <div class="card"><span class="k">Price</span><h3>No paywall</h3><p>No sign-up, no credits, no watermark.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Who it is for</h2></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Who you are</th><th>What you're dealing with</th><th>What Plainwrite does</th></tr></thead>
+      <tbody>
+        <tr><td>Writers and bloggers</td><td>Drafts that read smooth but empty.</td><td>Breaks up uniform sentences and swaps stock phrases for plain ones.</td></tr>
+        <tr><td>Marketers and SEO</td><td>Pages that all sound the same.</td><td>Keeps locked keywords intact while the surrounding copy gets sharper.</td></tr>
+        <tr><td>Office workers</td><td>Emails and reports that sound stiff.</td><td>Formal style that stays professional without the corporate fog.</td></tr>
+        <tr><td>ESL writers</td><td>Correct grammar, odd phrasing.</td><td>Replaces awkward constructions with common ones.</td></tr>
+        <tr><td>Students and researchers</td><td>Notes drafted with AI help that need your own voice.</td><td>Academic style that keeps hedged, precise wording.</td></tr>
+        <tr><td>Freelancers and global teams</td><td>Many drafts, tight deadlines.</td><td>Fast reruns and single-line fixes instead of rewriting from scratch.</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <div class="band">
+    <h2>Humanize AI text free, with no strings</h2>
+    <div class="stats">
+      <div class="stat"><b>∞</b><span>reruns</span></div>
+      <div class="stat"><b>2,000</b><span>words per run</span></div>
+      <div class="stat"><b>0</b><span>sign-ups</span></div>
+      <div class="stat"><b>0</b><span>paywalls</span></div>
+    </div>
+    <a class="go" href="#top">Humanize your text</a>
+  </div>
+
+  <section id="faq">
+    <div class="sec-h"><h2>Questions</h2></div>
+    <details><summary>What is an AI humanizer?</summary><p>A tool that rewrites machine-sounding text so it reads like a person wrote it: fewer stock phrases, more varied sentences, plainer words.</p></details>
+    <details><summary>How do I make AI text sound human?</summary><p>Paste it into the box, choose a style, press Humanize it. Then read the result aloud, click any sentence that still sounds off, and rephrase it.</p></details>
+    <details><summary>Is it free for everyone?</summary><p>Yes. There is no limit on reruns, no credits and no payment screen.</p></details>
+    <details><summary>Will it keep my meaning?</summary><p>It swaps wording and reshapes sentences, and it does not add claims. Lock names, numbers and keywords in the "Keep as written" field, and always read the result before you publish it.</p></details>
+    <details><summary>Do I need an account?</summary><p>No. Open the page and paste. Your text stays in your browser.</p></details>
+    <details><summary>Will it get past AI detectors?</summary><p>No tool can promise that, and detectors disagree with each other. The "stock phrases flagged" count under the output shows a concrete thing you can check: how many telltale phrases the rewrite removed.</p></details>
+  </section>
+
+  <footer>
+    <span class="logo tag"><i></i>Plainwrite &nbsp;<small style="font:400 .92rem var(--body);color:var(--muted)">The least annoying AI humanizer.</small></span>
+    <a href="#top">About</a><a href="#top">Terms</a><a href="#top">Privacy</a>
+    <span>Created by P. Rameswara Anand, Research Scholar, Anurag University, Hyderabad 500088</span>
+    <span>© 2026 Plainwrite</span>
+  </footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+var MAX=2000;
+var $=function(id){return document.getElementById(id)};
+var SAMPLE="In today's fast-paced digital landscape, it is important to note that effective communication plays a pivotal role in the success of any organization. Furthermore, leveraging cutting-edge tools can seamlessly elevate your workflow and ensure that teams can collaborate efficiently. Moreover, a comprehensive strategy does not merely facilitate productivity, but it also fosters a robust culture of trust.\n\nIn order to navigate the complexities of modern work, leaders must utilize a myriad of approaches. Additionally, numerous studies are a testament to the fact that clear writing is crucial. In conclusion, organizations that delve into these principles will unlock their full potential.";
+
+/* ---------- seeded random ---------- */
+function rng(seed){var a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+/* ---------- phrase tables ---------- */
+var AI=[
+ ["in today['’]s (?:fast-paced|digital|modern|ever-changing)(?: \\w+)? (?:world|age|landscape|era),?\\s*",[""]],
+ ["it (?:is|['’]s) (?:important|worth|crucial|essential) to (?:note|mention|remember|recognize|understand) that\\s*",[""]],
+ ["it (?:is|['’]s) worth noting that\\s*",[""]],
+ ["plays? an? (?:crucial|pivotal|vital|key|significant) role in",["matters for","shapes","is central to"]],
+ ["a testament to",["proof of","a sign of"]],
+ ["testament to",["proof of","a sign of"]],
+ ["navigate the complexities of",["handle","work through"]],
+ ["unlock (?:the |their |its |your )?(?:full )?potential",["get more out of it","make the most of it"]],
+ ["delves? into",["look at","dig into","get into"]],
+ ["dives? into",["look at","get into"]],
+ ["in the realm of",["in"]],
+ ["in order to",["to"]],
+ ["a (?:myriad|plethora|multitude) of",["plenty of","lots of","many"]],
+ ["a wide (?:range|array) of",["many","all kinds of"]],
+ ["furthermore,?",["also","on top of that","plus"]],
+ ["moreover,?",["also","what's more"]],
+ ["additionally,?",["also","on top of that"]],
+ ["in addition,?",["also","besides"]],
+ ["utili[sz]es",["uses"]],["utili[sz]ed",["used"]],["utili[sz]ing",["using"]],["utili[sz]e",["use"]],
+ ["leverages",["uses"]],["leveraged",["used"]],["leveraging",["using"]],["leverage",["use"]],
+ ["seamlessly",["smoothly","easily"]],
+ ["multifaceted",["complex","many-sided"]],
+ ["cutting-edge",["modern","up-to-date"]],
+ ["game-changer",["big shift"]],
+ ["tapestry",["mix"]],
+ ["paramount",["essential"]],
+ ["crucial",["key","important"]],
+ ["pivotal",["key","central"]],
+ ["robust",["solid","strong"]],
+ ["comprehensive",["thorough","full"]],
+ ["numerous",["many","plenty of"]],
+ ["ensures",["makes sure"]],["ensuring",["making sure"]],["ensure",["make sure"]],
+ ["facilitates",["supports"]],["facilitate",["support","help with"]],
+ ["fosters",["builds"]],["foster",["encourage","build"]],
+ ["elevates",["improves"]],["elevate",["improve","lift"]],
+ ["endeavou?rs?",["efforts"]],
+ ["commence",["start","begin"]],
+ ["subsequently",["then","later"]],
+ ["in conclusion,?|to sum up,?|in summary,?",["so,","all in all,"]]
+];
+var CASUAL=[["therefore,?",["so"]],["however,",["but","still,","that said,"]],["thus,?",["so"]],["merely",["just"]],["approximately",["about"]],["purchase",["buy"]],["assist",["help"]],["obtain",["get"]],["demonstrate",["show"]]];
+var INTENS="(?:very|really|extremely|highly|incredibly|truly|quite|basically|essentially|simply)";
+var FLAGS=new RegExp("delve|tapestry|furthermore|moreover|additionally|utili[sz]|leverag|seamless|pivotal|crucial|testament|myriad|plethora|navigate the|unlock|elevate|foster|robust|cutting-edge|game-changer|in today['’]s|it is (?:important|worth)|in conclusion|in order to|realm|multifaceted|paramount|comprehensive|landscape","gi");
+var AI_RE=AI.map(function(r){return[new RegExp("\\b"+r[0]+(/(,\??|\\s\*)$/.test(r[0])?"":"\\b"),"gi"),r[1]]});
+var CAS_RE=CASUAL.map(function(r){return[new RegExp("\\b"+r[0]+(/(,\??|\\s\*)$/.test(r[0])?"":"\\b"),"gi"),r[1]]});
+var SYN=[
+ ["approximately",["roughly","about"]],["primarily",["mainly","largely"]],["typically",["usually","normally"]],
+ ["various",["several","different"]],["additional",["extra","further"]],["frequently",["often"]],
+ ["particularly",["especially"]],["initially",["at first"]],["mostly",["largely","mainly"]],["nearly",["almost"]],
+ ["currently",["right now"],"c"],["currently",["at present"],"f"],
+ ["a number of",["several","a handful of"]],["the majority of",["most"]],["a lot of",["plenty of","many"]],
+ ["prior to",["before"]],["in spite of",["despite"]],["with (?:regard|respect) to",["regarding","on the subject of"]],
+ ["(?:is|are) able to",["can"]],["ha(?:s|ve) the ability to",["can"]],
+ ["due to",["because of","owing to"]],
+ ["as a result,",["so,","because of this,"]],["consequently,",["so,","as a result,"]],
+ ["for example,",["for instance,","say,"],"c"],["for instance,",["for example,"]],
+ ["on the other hand,",["then again,","by contrast,"]],
+ ["in the near future",["soon"]],["at this point in time",["now"]],["the fact that",["that"]],
+ ["for the purpose of",["for"]],["rather than",["instead of"]],["whether or not",["whether"]],
+ ["such as",["like"],"c"],["in addition to",["besides","alongside"]],["as well as",["along with","and"]],
+ ["demonstrates",["shows"],"c"],["demonstrated",["showed"],"c"],["demonstrating",["showing"],"c"],["demonstrate",["show"],"c"],
+ ["shows",["demonstrates","indicates"],"f"],["show",["demonstrate","indicate"],"f"],
+ ["helps",["assists"],"f"],["help",["assist"],"f"],["needs",["requires"],"f"],
+ ["therefore,",["thus,","as a result,"],"f"],["so far",["to date"],"f"]
+];
+var SYN_RE=SYN.map(function(x){return[new RegExp("\\b"+x[0]+(/(,\??|\\s\*)$/.test(x[0])?"":"\\b"),"gi"),x[1],x[2]||""]});
+var IRR={get:["get","gets","got","getting"],see:["see","sees","saw","seeing"],show:["show","shows","showed","showing"],run:["run","runs","ran","running"],build:["build","builds","built","building"],hit:["hit","hits","hit","hitting"],top:["top","tops","topped","topping"],find:["find","finds","found","finding"],make:["make","makes","made","making"],put:["put","puts","put","putting"],keep:["keep","keeps","kept","keeping"],"do":["do","does","did","doing"],set:["set","sets","set","setting"],think:["think","thinks","thought","thinking"],cut:["cut","cuts","cut","cutting"],go:["go","goes","went","going"],hold:["hold","holds","held","holding"]};
+function vf(w,k){if(IRR[w])return IRR[w][k];if(k===0)return w;if(k===1)return /(s|x|z|ch|sh)$/.test(w)?w+"es":/[^aeiou]y$/.test(w)?w.slice(0,-1)+"ies":w+"s";if(k===2)return /e$/.test(w)?w+"d":/[^aeiou]y$/.test(w)?w.slice(0,-1)+"ied":w+"ed";return /[^e]e$/.test(w)?w.slice(0,-1)+"ing":w+"ing"}
+function vph(ph,k){var a=ph.split(" ");a[0]=vf(a[0],k);return a.join(" ")}
+var VERBS=[
+ ["derive",["work out"],"c"],["invoke",["use","call on"],"c"],["exceed",["top","go past","beat"],"c"],["rescue",["save","fix"],"c"],
+ ["obtain",["get"],"c"],["require",["need"],"c"],["assist",["help"],"c"],["indicate",["suggest","point to"],"c"],
+ ["examine",["look at","go through"],"c"],["investigate",["look into"],"c"],["establish",["set up"],"c"],
+ ["determine",["work out","figure out"],"c"],["acquire",["get"],"c"],["reveal",["show"],"c"],["maintain",["keep"],"c"],
+ ["achieve",["reach","hit"],"c"],["generate",["produce","create"],"c"],["evaluate",["assess","judge"],"c"],
+ ["identify",["spot","pick out"],"c"],["constitute",["make up"],"c"],["consider",["think about"],"c"],
+ ["observe",["notice","see"],"c"],["perform",["carry out","do"],"c"],["enhance",["boost","improve"],"c"],
+ ["reduce",["cut","lower"],"c"],["emphasize",["stress"],"c"],["propose",["suggest"],"c"],["illustrate",["show"],"c"],
+ ["try",["attempt"],"f"],["check",["verify","examine"],"f"],["build",["construct"],"f"],["buy",["purchase"],"f"]
+].map(function(v){var fr=[0,1,2,3].map(function(k){return vf(v[0],k)});return{forms:fr,alts:v[1],g:v[2],re:new RegExp("\\b(?:"+fr.join("|")+")\\b","gi")}});
+var CONTR=[["do not","don't"],["does not","doesn't"],["did not","didn't"],["is not","isn't"],["are not","aren't"],["was not","wasn't"],["were not","weren't"],["cannot","can't"],["will not","won't"],["would not","wouldn't"],["should not","shouldn't"],["could not","couldn't"],["have not","haven't"],["has not","hasn't"],["it is","it's"],["that is","that's"],["there is","there's"],["they are","they're"],["we are","we're"],["you are","you're"],["let us","let's"],["what is","what's"]];
+var EXPAND=[["can['’]t","cannot"],["won['’]t","will not"],["don['’]t","do not"],["doesn['’]t","does not"],["didn['’]t","did not"],["isn['’]t","is not"],["aren['’]t","are not"],["wasn['’]t","was not"],["weren['’]t","were not"],["wouldn['’]t","would not"],["shouldn['’]t","should not"],["couldn['’]t","could not"],["haven['’]t","have not"],["hasn['’]t","has not"],["it['’]s","it is"],["that['’]s","that is"],["there['’]s","there is"],["they['’]re","they are"],["we['’]re","we are"],["you['’]re","you are"],["let['’]s","let us"]];
+var CONNECT={
+ casual:["Put simply,","In practice,","That said,","To be fair,"],
+ creative:["Funny enough,","In a way,","Strangely,","If you think about it,"],
+ academic:["In particular,","Notably,","In this respect,"],
+ formal:["In practice,","Specifically,","In this context,"]};
+var STARTERS={the:1,this:1,that:1,these:1,those:1,it:1,they:1,we:1,you:1,many:1,some:1,most:1,each:1,every:1,there:1,when:1,if:1,while:1,as:1};
+
+function cap(m,r){return m.charAt(0)===m.charAt(0).toUpperCase()&&/[a-z]/i.test(m.charAt(0))?r.charAt(0).toUpperCase()+r.slice(1):r}
+function pick(r,a){return a[Math.floor(r()*a.length)]}
+function fixCaps(s){return s.replace(/^(\W*)([a-z])/,function(_,p,c){return p+c.toUpperCase()}).replace(/([.!?]["”']?\s+)([a-z])/g,function(_,p,c){return p+c.toUpperCase()})}
+
+/* ---------- transform one sentence ---------- */
+function transform(sent,o,seed,locks){
+  var r=rng(seed),s=sent,held=[];
+  s=s.replace(/\([^)]*\)|\[[^\]]*\]|\b[A-Za-z0-9\-]*\d(?:[.,]\d+)*[A-Za-z0-9%\-]*|\b[A-Z]{2,}[A-Za-z0-9\-]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g,function(m){held.push(m);return "\u0001"+(held.length-1)+"\u0001"});
+  locks.forEach(function(t){
+    var re=new RegExp("\\b"+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","gi");
+    s=s.replace(re,function(m){held.push(m);return "\u0001"+(held.length-1)+"\u0001"});
+  });
+  AI_RE.forEach(function(x){s=s.replace(x[0],function(m){var v=pick(r,x[1]);if(v&&/,$/.test(m)&&!/,$/.test(v))v+=",";var t=cap(m,v);return /\s$/.test(m)&&t?t+" ":t})});
+  if(o.light){s=fixCaps(s.replace(/\s{2,}/g," ").trim());return s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]})}
+  var grp=(o.style==="casual"||o.style==="creative")?"c":"f";
+  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m){if(r()>0.75)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return cap(m,v)})});
+  VERBS.forEach(function(v){if(v.g!==grp)return;s=s.replace(v.re,function(m){if(r()>0.7)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return cap(m,vph(pick(r,v.alts),k))})});
+  if(o.style==="casual"||o.style==="creative"){CAS_RE.forEach(function(x){s=s.replace(x[0],function(m){return cap(m,pick(r,x[1]))})})}
+  /* contractions */
+  if(o.style==="academic"||o.style==="formal"){
+    EXPAND.forEach(function(p){s=s.replace(new RegExp("\\b"+p[0]+"\\b","gi"),function(m){return cap(m,p[1])})});
+  }else{
+    var p0=o.style==="std"?0.5:1;
+    CONTR.forEach(function(p){s=s.replace(new RegExp("\\b"+p[0]+"\\b","gi"),function(m){return r()<(o.style==="casual"?0.9:0.6)?cap(m,p[1]):m})});
+  }
+  /* shorten */
+  if(o.len==="short"){
+    s=s.replace(new RegExp("\\b"+INTENS+"\\s+","gi"),"").replace(/,\s*and so on\b/gi,"").replace(/\s*\([^)]{0,80}\)/g,"");
+  }
+  /* split long sentences for rhythm */
+  var words=s.split(/\s+/).length;
+  if(words>22&&o.style!=="academic"){
+    var pats=o.style==="formal"?[/;\s+/]:[/;\s+/,/,\s+but\s+/i,/,\s+and\s+(?=\w+\s+\w+\s+\w+)/];
+    for(var i=0;i<pats.length;i++){
+      var m=pats[i].exec(s);
+      if(m&&m.index>40&&r()<0.85){
+        var j=m[0].toLowerCase().indexOf("but")>-1?"But ":(m[0].toLowerCase().indexOf("and")>-1?"And ":"");
+        s=s.slice(0,m.index).replace(/[,;]$/,"")+". "+j+(j?"":"")+s.slice(m.index+m[0].length);
+        if(!j)s=s.replace(/\.\s+([a-z])/,function(_,c){return ". "+c.toUpperCase()});
+        break;
+      }
+    }
+  }
+  s=s.replace(/\s{2,}/g," ").replace(/\s+([,.;!?])/g,"$1").replace(/,\s*,/g,",").trim();
+  s=fixCaps(s);
+  /* clause reordering */
+  var cm;
+  if(r()<0.85&&(cm=/^(If|When|Because|Although|While|Unless|Since) ([^,;:]{8,}), ([^;:]{15,}?)([.!?])$/.exec(s))){
+    var mfw=(cm[3].split(/\s+/)[0]||"").toLowerCase();
+    if(STARTERS[mfw]){var sub=cm[1].toLowerCase(),sep=(sub==="although"||sub==="while")?", ":" ";
+      s=cm[3].charAt(0).toUpperCase()+cm[3].slice(1)+sep+sub+" "+cm[2]+cm[4]}
+  }else if(r()<0.85&&(cm=/^([^,;:]{15,}?) (because|although|when|if|unless|while) ([^,;:]{8,})([.!?])$/.exec(s))){
+    var mfw2=(cm[1].split(/\s+/)[0]||"").toLowerCase().replace(/[^a-z]/g,"");
+    if(STARTERS[mfw2]){s=cm[2].charAt(0).toUpperCase()+cm[2].slice(1)+" "+cm[3]+", "+cm[1].charAt(0).toLowerCase()+cm[1].slice(1)+cm[4]}
+  }else if(r()<0.7&&(cm=/^(Under|In|With|For|During|After|Before|Given|At) ([^,;:]{6,}), (the|we|it|they|this|these|a|an|our) ([^;:]{15,}?)([.!?])$/.exec(s))){
+    s=cm[3].charAt(0).toUpperCase()+cm[3].slice(1)+" "+cm[4]+", "+cm[1].toLowerCase()+" "+cm[2]+cm[5];
+  }
+  /* expand */
+  if(o.len==="long"&&o.idx>0){
+    var fw=(s.split(/\s+/)[0]||"").toLowerCase().replace(/[^a-z]/g,"");
+    if(STARTERS[fw]&&r()<0.55){
+      var c=pick(r,CONNECT[o.style]||CONNECT.casual);
+      s=c+" "+s.charAt(0).toLowerCase()+s.slice(1);
+    }
+  }
+  s=s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]});
+  return s;
+}
+
+/* ---------- document model ---------- */
+var units=[];   /* {src, out, seed, para} */
+var selected=-1, runSeed=1;
+function split(text){
+  var paras=text.replace(/\r/g,"").split(/\n{2,}/),res=[];
+  paras.forEach(function(p,pi){
+    var s=p.replace(/\s*\n\s*/g," ").trim();
+    if(!s)return;
+    s.split(/(?<=[.!?])\s+(?=[A-Z"“(\u0001])/).forEach(function(x){if(x.trim())res.push({src:x.trim(),para:pi})});
+  });
+  return res;
+}
+function opts(i){return{style:document.querySelector('input[name="style"]:checked').value,len:document.querySelector('input[name="len"]:checked').value,idx:i}}
+function locks(){return $("terms").value.split(",").map(function(t){return t.trim()}).filter(Boolean)}
+function words(t){var m=t.trim().match(/\S+/g);return m?m.length:0}
+function countFlags(t){var m=t.match(FLAGS);return m?m.length:0}
+
+function build(){
+  var text=$("in").value;
+  units=split(text);
+  (function(){
+    var mr=rng(hash(text)+runSeed*131),st=opts(0).style,res=[];
+    for(var i=0;i<units.length;i++){
+      var a=units[i],b=units[i+1];
+      if(b&&a.para===b.para&&mr()<0.5){
+        var wa=words(a.src),wb=words(b.src),fw=(b.src.split(/\s+/)[0]||"").toLowerCase().replace(/[^a-z]/g,"");
+        if(wa>=4&&wa<=13&&wb>=4&&wb<=13&&STARTERS[fw]&&/\.$/.test(a.src)&&/\.$/.test(b.src)){
+          var j=(st==="academic"||st==="formal"||(st==="std"&&mr()<0.5))?"; ":", and ";
+          res.push({src:a.src.replace(/\.$/,"")+j+b.src.charAt(0).toLowerCase()+b.src.slice(1),para:a.para});i++;continue;
+        }
+      }
+      res.push(a);
+    }
+    units=res;
+  })();
+  var L=locks(),n=units.length,dropEnd=/^(in conclusion|to sum up|in summary|overall|ultimately)\b/i;
+  var o0=opts(0);
+  units.forEach(function(u,i){
+    u.seed=hash(u.src)+runSeed*7919;
+    u.out=transform(u.src,opts(i),u.seed,L);
+    u.drop=o0.len==="short"&&n>4&&i===n-1&&dropEnd.test(u.src);
+  });
+  units=units.filter(function(u){return !u.drop});
+}
+function plain(){
+  var out=[],last=-1,cur="";
+  units.forEach(function(u){
+    if(last!==-1&&u.para!==last){out.push(cur);cur=""}
+    cur+=(cur?" ":"")+u.out;last=u.para;
+  });
+  if(cur)out.push(cur);
+  return out.join("\n\n");
+}
+function render(){
+  var box=$("out");box.textContent="";
+  var p=null,last=-1;
+  units.forEach(function(u,i){
+    if(p===null||u.para!==last){p=document.createElement("p");box.appendChild(p);last=u.para}
+    var sp=document.createElement("span");
+    sp.className="u"+(i===selected?" sel":"");sp.textContent=u.out;sp.dataset.i=i;sp.tabIndex=0;
+    sp.setAttribute("role","button");sp.setAttribute("aria-label","Select sentence to rephrase");
+    p.appendChild(sp);p.appendChild(document.createTextNode(" "));
+  });
+  var has=units.length>0;
+  $("copy").disabled=!has;$("rerun").disabled=!has;$("line").disabled=!(has&&selected>-1);
+}
+function report(){
+  var rep=$("report"),a=countFlags($("in").value),b=countFlags(plain());
+  rep.className="report on";rep.textContent="";
+  function chip(t,c){var e=document.createElement("span");e.className="chip "+c;e.textContent=t;rep.appendChild(e)}
+  chip("Stock phrases flagged: "+a+" in, "+b+" out",b<a||a===0?"good":"bad");
+  chip(words($("in").value)+" → "+words(plain())+" words","good");
+  var n=document.createElement("span");n.className="note";
+  n.textContent=a===0?"No telltale phrases found in your text. Wording and sentence structure were still adjusted.":"The count covers a fixed list of phrases AI drafts overuse. It is not a detector score.";
+  rep.appendChild(n);
+}
+function updateCount(){
+  var n=words($("in").value),c=$("count");
+  c.textContent=n.toLocaleString()+" / "+MAX.toLocaleString()+" words";
+  c.className="count"+(n>MAX?" over":"");
+  $("run").disabled=n===0||n>MAX;
+}
+function run(bump){
+  if(bump)runSeed++;
+  selected=-1;
+  if(engine()==="ai"&&window.PW_LLM){llmRun();return}
+  build();render();report();
+}
+
+/* ---------- in-browser language model ---------- */
+function engine(){return document.querySelector('input[name="eng"]:checked').value}
+function setStatus(t){$("status").textContent=t}
+var SYS="You rewrite text so it reads like a careful human wrote it. Keep the meaning, facts, numbers, names, abbreviations and technical terms unchanged. Change sentence structure and word choice, vary sentence length, use plain direct wording, and avoid stock AI phrases. Never use em dashes. Never add new claims. Output only the rewritten text.";
+var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nFurthermore, it is important to note that the system utilizes a robust architecture. The results demonstrate significant improvements in accuracy across 3 datasets.";
+var EX_OUT="The system has a solid architecture, and accuracy improved on all 3 datasets.";
+function styleDesc(s){return{casual:"casual and conversational, contractions allowed",creative:"creative, vivid, varied rhythm",academic:"academic, precise and measured, no contractions",formal:"formal and professional, no contractions"}[s]}
+function lenDesc(l){return{short:"about 25% shorter, cutting filler",std:"about the same",long:"about 25% longer, adding natural connecting detail but no new facts"}[l]}
+function mkMessages(text,o,L,extra){
+  var u="Style: "+styleDesc(o.style)+".\nLength: "+lenDesc(o.len)+"."+(L.length?"\nKeep these terms exactly as written: "+L.join(", ")+".":"")+(extra?"\n"+extra:"")+"\n\nText:\n"+text;
+  return[{role:"system",content:SYS},{role:"user",content:EX_IN},{role:"assistant",content:EX_OUT},{role:"user",content:u}];
+}
+function cleanOut(t){
+  t=t.replace(/^\s*(?:here(?:'s| is)[^\n]*:|rewritten text:|text:)\s*/i,"").replace(/^["“']+|["”']+$/g,"");
+  t=t.replace(/\s*[—–]\s*/g,", ").replace(/\s*\n+\s*/g," ").replace(/\s{2,}/g," ").trim();
+  return t;
+}
+function protectedTokens(src,L){
+  var a=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(src.match(/\b[A-Z]{2,}[A-Za-z0-9\-]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[]);
+  return a.concat(L);
+}
+function valid(src,out,o,L){
+  if(!out)return false;
+  var ws=words(src),wo=words(out),lo=o.len==="short"?0.35:(o.len==="long"?0.9:0.6),hi=o.len==="short"?1.15:(o.len==="long"?2.3:1.5);
+  if(wo<ws*lo||wo>ws*hi)return false;
+  if(out.toLowerCase().replace(/\W+/g," ")===src.toLowerCase().replace(/\W+/g," "))return false;
+  return protectedTokens(src,L).every(function(t){return out.indexOf(t)>-1});
+}
+function rulesFallback(src,o,L,seed){
+  return split(src).map(function(u,i){return transform(u.src,{style:o.style,len:o.len,idx:i},seed+i*31,L)}).join(" ");
+}
+async function rewrite(src,o,L,extra){
+  var maxTok=Math.min(640,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
+  for(var a=0;a<2;a++){
+    try{
+      var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.7+0.2*a});
+      var out=cleanOut(raw);
+      if(valid(src,out,o,L))return{text:transform(out,{style:o.style,len:"std",idx:0,light:true},hash(out),L),ai:true};
+    }catch(e){if(a===1)throw e}
+  }
+  return{text:rulesFallback(src,o,L,hash(src)+runSeed),ai:false};
+}
+async function loadModel(){
+  var Lm=window.PW_LLM;if(!Lm)throw new Error("The AI engine could not be loaded in this browser.");
+  var id=$("model").value;
+  if(Lm.isLoaded()&&Lm.currentId()===id)return;
+  $("barwrap").hidden=false;$("bar").style.width="0%";$("load").disabled=true;
+  try{
+    var info=await Lm.load(id,function(p,msg){$("bar").style.width=Math.round(p*100)+"%";setStatus(msg)});
+    setStatus("Model ready on "+info.device+". It is cached, so next time it loads fast.");$("load").textContent="Model loaded";
+  }catch(e){
+    $("load").disabled=false;setStatus("Could not load the model ("+(e&&e.message?e.message:e)+"). Switch to Fast rules, or try another browser.");throw e;
+  }finally{$("barwrap").hidden=true}
+}
+function groups(text){
+  var us=split(text),res=[],cur=null;
+  us.forEach(function(u){
+    var w=words(u.src);
+    if(cur&&cur.para===u.para&&cur.w+w<=80){cur.src+=" "+u.src;cur.w+=w}
+    else{cur={src:u.src,para:u.para,w:w};res.push(cur)}
+  });
+  return res;
+}
+async function llmRun(){
+  var btn=$("run"),L=locks(),o=opts(0),text=$("in").value,gs=groups(text),fb=0;
+  btn.disabled=true;$("rerun").disabled=true;btn.textContent="Working...";
+  try{
+    await loadModel();
+    var nu=[];
+    for(var i=0;i<gs.length;i++){
+      setStatus("Rewriting passage "+(i+1)+" of "+gs.length+"...");
+      var r=await rewrite(gs[i].src,o,L);
+      if(!r.ai)fb++;
+      var parts=split(r.text);if(!parts.length)parts=[{src:r.text}];
+      parts.forEach(function(p){nu.push({src:p.src,out:p.src,para:gs[i].para,ai:true})});
+    }
+    units=nu;render();report();
+    setStatus(fb?("Done. "+fb+" of "+gs.length+" passages could not be rewritten safely (numbers or terms would change), so the rules were used for those."):"Done. Read the result against your original before you use it.");
+  }catch(e){
+    setStatus("The AI model failed ("+(e&&e.message?e.message:e)+"). Used the fast rules instead.");
+    build();render();report();
+  }finally{btn.textContent="Humanize it";updateCount()}
+}
+async function llmLine(u){
+  var b=$("line"),o=opts(selected),L=locks();b.disabled=true;b.textContent="Rewriting...";
+  try{
+    var r=await rewrite(u.src,o,L,"Rewrite this single sentence in a different way from: "+u.out);
+    if(r.text)u.out=r.text;
+  }catch(e){setStatus("Could not rewrite that line: "+(e&&e.message?e.message:e))}
+  finally{b.textContent="Rephrase line";render();report()}
+}
+function initLLM(){
+  var Lm=window.PW_LLM,sel=$("model");if(!Lm)return;
+  sel.textContent="";
+  Lm.models.forEach(function(m){var op=document.createElement("option");op.value=m.id;op.textContent=m.label;if(m.needsGPU&&!Lm.hasGPU)op.disabled=true;sel.appendChild(op)});
+  setStatus("AI engine ready. The model downloads once when you press Humanize it or Load model. "+(Lm.hasGPU?"Your browser supports WebGPU, so it will run on the GPU.":"No WebGPU here, so it will run on the CPU and be slower."));
+}
+window.addEventListener("pw-llm-ready",initLLM);
+window.addEventListener("pw-llm-fail",function(){setStatus("The AI engine could not be downloaded, so Fast rules are being used.");$("modelctl").hidden=true});
+$("load").addEventListener("click",function(){loadModel().catch(function(){})});
+$("model").addEventListener("change",function(){var Lm=window.PW_LLM;if(Lm&&Lm.isLoaded())Lm.unload();$("load").disabled=false;$("load").textContent="Load model"});
+document.querySelectorAll('input[name="eng"]').forEach(function(r){r.addEventListener("change",function(){$("modelctl").hidden=engine()!=="ai"})});
+if(window.PW_LLM)initLLM();
+
+/* ---------- events ---------- */
+$("run").addEventListener("click",function(){run(false)});
+$("rerun").addEventListener("click",function(){run(true)});
+$("in").addEventListener("input",updateCount);
+$("sample").addEventListener("click",function(){$("in").value=SAMPLE;updateCount();run(false)});
+$("clear").addEventListener("click",function(){$("in").value="";units=[];selected=-1;updateCount();
+  $("out").innerHTML='<span class="ph">Your human version lands here. Click any sentence afterwards to rephrase just that line.</span>';
+  $("report").className="report";$("copy").disabled=$("rerun").disabled=$("line").disabled=true});
+$("upload").addEventListener("click",function(){$("file").click()});
+$("file").addEventListener("change",function(e){
+  var f=e.target.files[0];if(!f)return;
+  var rd=new FileReader();rd.onload=function(){$("in").value=String(rd.result||"");updateCount()};rd.readAsText(f);e.target.value="";
+});
+function pickUnit(t){
+  var s=t.closest&&t.closest(".u");if(!s)return;
+  selected=+s.dataset.i;render();
+}
+$("out").addEventListener("click",function(e){pickUnit(e.target)});
+$("out").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();pickUnit(e.target)}});
+$("line").addEventListener("click",function(){
+  if(selected<0)return;var u=units[selected];if(u.ai&&engine()==="ai"&&window.PW_LLM){llmLine(u);return}
+  var before=u.out,tries=0;
+  do{u.seed+=104729;u.out=transform(u.src,opts(selected),u.seed,locks());tries++}while(u.out===before&&tries<6);
+  render();report();
+});
+$("copy").addEventListener("click",function(){
+  var t=plain(),b=$("copy");
+  function done(m){b.textContent=m;setTimeout(function(){b.textContent="Copy"},1400)}
+  try{navigator.clipboard.writeText(t).then(function(){done("Copied")},function(){fallback()})}catch(_){fallback()}
+  function fallback(){var r=document.createRange();r.selectNodeContents($("out"));var s=getSelection();s.removeAllRanges();s.addRange(r);done("Selected")}
+});
+$("theme").addEventListener("click",function(){
+  var d=document.documentElement,dark=d.getAttribute("data-theme")==="dark"||(!d.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme: dark)").matches);
+  d.setAttribute("data-theme",dark?"light":"dark");
+});
+updateCount();
+window.__pw={transform:transform,split:split};
+})();
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
