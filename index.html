@@ -582,8 +582,8 @@ function run(bump){
 function engine(){return document.querySelector('input[name="eng"]:checked').value}
 function setStatus(t){$("status").textContent=t}
 var SYS="You rewrite text so it reads like a careful human wrote it. Always rewrite: never return the input unchanged. Reword every sentence, reorder clauses, and merge or split sentences where natural. Keep the meaning, facts, numbers, names, abbreviations and technical terms exactly the same. Use plain direct wording and avoid stock AI phrases. Never use em dashes. Never add new claims. Output only the rewritten text.";
-var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nIt is important to note that machine learning is routinely proposed as an improvement to trading strategies. We test that proposition rigorously. Only 2 of 10 enhanced configurations outperform the baseline.";
-var EX_OUT="People keep suggesting that machine learning will improve trading strategies, so we put that claim through a hard test. Only 2 of 10 enhanced configurations beat the baseline.";
+var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nIt is important to note that machine learning is routinely proposed as an improvement to trading strategies.";
+var EX_OUT="People keep suggesting that machine learning will make trading strategies better.";
 function styleDesc(s){return{casual:"casual and conversational, contractions allowed",creative:"creative, vivid, varied rhythm",academic:"academic, precise and measured, no contractions",formal:"formal and professional, no contractions"}[s]}
 function lenDesc(l){return{short:"about 25% shorter, cutting filler",std:"about the same",long:"about 25% longer, adding natural connecting detail but no new facts"}[l]}
 function mkMessages(text,o,L,extra){
@@ -599,12 +599,12 @@ function wordSet(t){var m=t.toLowerCase().match(/[a-z0-9]+/g)||[],o={};m.forEach
 function overlap(a,b){var A=wordSet(a),B=wordSet(b),n=0,k=0;for(var w in A){k++;if(B[w])n++}return k?n/k:1}
 function valid(src,out,o,L){
   if(!out)return"empty";
-  var ws=words(src),wo=words(out),lo=o.len==="short"?0.3:(o.len==="long"?0.8:0.5),hi=o.len==="short"?1.2:(o.len==="long"?2.5:1.7);
+  var ws=words(src),wo=words(out),lo=o.len==="short"?0.25:(o.len==="long"?0.7:0.4),hi=o.len==="short"?1.3:(o.len==="long"?2.6:2);
   if(wo<ws*lo||wo>ws*hi)return"length";
   if(overlap(src,out)>0.93&&Math.abs(wo-ws)<3)return"copy";
   var nums=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(L);
   for(var i=0;i<nums.length;i++)if(out.indexOf(nums[i])<0)return"number "+nums[i];
-  var low=out.toLowerCase(),ac=src.match(/\b[A-Z]{2,}[A-Za-z0-9]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[];
+  var low=out.toLowerCase(),ac=(src.match(/\b[A-Z]{2,}[A-Za-z0-9]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[]).filter(function(t){return t.length>=4});
   for(var j=0;j<ac.length;j++)if(low.indexOf(ac[j].toLowerCase())<0)return"term "+ac[j];
   return"";
 }
@@ -615,7 +615,7 @@ var lastReason="";
 async function rewrite(src,o,L,extra){
   var maxTok=Math.min(512,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
   for(var a=0;a<3;a++){
-    var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.7+0.15*a});
+    var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.6+0.15*a});
     var out=cleanOut(raw),why=valid(src,out,o,L);
     console.log("[plainwrite] attempt "+(a+1)+(why?" rejected ("+why+")":" accepted"),{src:src,out:out});
     if(!why)return{text:transform(out,{style:o.style,len:"std",idx:0,light:true},hash(out),L),ai:true};
@@ -639,7 +639,7 @@ function groups(text){
   var us=split(text),res=[],cur=null;
   us.forEach(function(u){
     var w=words(u.src);
-    if(cur&&cur.para===u.para&&cur.w+w<=40){cur.src+=" "+u.src;cur.w+=w}
+    if(cur&&cur.para===u.para&&cur.w+w<=0){cur.src+=" "+u.src;cur.w+=w}
     else{cur={src:u.src,para:u.para,w:w};res.push(cur)}
   });
   return res;
@@ -676,6 +676,7 @@ function initLLM(){
   var Lm=window.PW_LLM,sel=$("model");if(!Lm)return;
   sel.textContent="";
   Lm.models.forEach(function(m){var op=document.createElement("option");op.value=m.id;op.textContent=m.label;if(m.needsGPU&&!Lm.hasGPU)op.disabled=true;sel.appendChild(op)});
+  if(Lm.hasGPU&&Lm.models[1])sel.value=Lm.models[1].id;
   setStatus("AI engine ready. The model downloads once when you press Humanize it or Load model. "+(Lm.hasGPU?"Your browser supports WebGPU, so it will run on the GPU.":"No WebGPU here, so it will run on the CPU and be slower."));
 }
 window.addEventListener("pw-llm-ready",initLLM);
