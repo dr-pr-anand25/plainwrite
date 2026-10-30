@@ -598,11 +598,28 @@ function cleanOut(t){
 }
 function wordSet(t){var m=t.toLowerCase().match(/[a-z0-9]+/g)||[],o={};m.forEach(function(w){o[w]=1});return o}
 function overlap(a,b){var A=wordSet(a),B=wordSet(b),n=0,k=0;for(var w in A){k++;if(B[w])n++}return k?n/k:1}
+function sane(out,src){
+  var ws=out.split(/\s+/),clean=function(x){return x.replace(/[^A-Za-z\-]/g,"").toLowerCase()};
+  for(var i=0;i<ws.length;i++){
+    var w=clean(ws[i]);
+    if(w.length>24)return false;
+    if(i>1&&w&&w===clean(ws[i-1])&&w===clean(ws[i-2]))return false;
+  }
+  var odd=(out.match(/\b[a-z]+[A-Z][A-Za-z]*\b|\b[A-Z][a-z]+[A-Z][A-Za-z]*\b/g)||[]).filter(function(t){return src.indexOf(t)<0});
+  if(odd.length)return false;
+  if((" "+out+" ").match(/\s[B-HJ-Z]\s/))return false;
+  if(/\b(?:by|of|to|the|a|an|and|or|with|for|in|on|at|that|is|are|as)[.!?]$/i.test(out.trim()))return false;
+  var cw=src.toLowerCase().match(/[a-z]{5,}/g)||[],ol=out.toLowerCase(),hit=0;
+  cw.forEach(function(w){if(ol.indexOf(w.slice(0,5))>-1)hit++});
+  if(cw.length>=4&&hit<cw.length*0.25)return false;
+  return true;
+}
 function valid(src,out,o,L){
   if(!out)return"empty";
   var ws=words(src),wo=words(out),lo=o.len==="short"?0.25:(o.len==="long"?0.7:0.4),hi=o.len==="short"?1.3:(o.len==="long"?2.6:2);
   if(wo<ws*lo||wo>ws*hi)return"length";
   if(overlap(src,out)>0.93&&Math.abs(wo-ws)<3)return"copy";
+  if(!sane(out,src))return"garbled";
   var nums=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(L);
   for(var i=0;i<nums.length;i++)if(out.indexOf(nums[i])<0)return"number "+nums[i];
   var low=out.toLowerCase(),ac=(src.match(/\b[A-Z]{2,}[A-Za-z0-9]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[]).filter(function(t){return t.length>=4});
@@ -613,16 +630,19 @@ function rulesFallback(src,o,L,seed){
   return split(src).map(function(u,i){return transform(u.src,{style:o.style,len:o.len,idx:i},seed+i*31,L)}).join(" ");
 }
 var lastReason="";
-async function rewrite(src,o,L,extra){
+async function rewrite(src,o,L,extra,avoid){
   var maxTok=Math.min(512,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
   for(var a=0;a<3;a++){
-    var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.6+0.15*a});
+    var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.35+0.2*a});
     var out=cleanOut(raw),why=valid(src,out,o,L);
+    if(!why&&avoid&&overlap(out,avoid)>0.9&&overlap(avoid,out)>0.9)why="same as before";
     console.log("[plainwrite] attempt "+(a+1)+(why?" rejected ("+why+")":" accepted"),{src:src,out:out});
     if(!why)return{text:transform(out,{style:o.style,len:"std",idx:0,light:true},hash(out),L),ai:true};
     lastReason=why;
   }
-  return{text:rulesFallback(src,o,L,hash(src)+runSeed),ai:false};
+  var seed=hash(src)+runSeed,t="";
+  for(var k=0;k<10;k++){t=rulesFallback(src,o,L,seed+k*997);if(!avoid||t!==avoid)break}
+  return{text:t,ai:false};
 }
 async function loadModel(){
   var Lm=window.PW_LLM;if(!Lm)throw new Error("The AI engine could not be loaded in this browser.");
@@ -656,7 +676,7 @@ async function llmRun(){
       var r=await rewrite(gs[i].src,o,L);
       if(!r.ai)fb++;
       var parts=split(r.text);if(!parts.length)parts=[{src:r.text}];
-      parts.forEach(function(p){nu.push({src:p.src,out:p.src,para:gs[i].para,ai:true})});
+      parts.forEach(function(p){nu.push({src:p.src,out:p.src,para:gs[i].para,ai:true,gid:i,orig:gs[i].src})});
     }
     units=nu;render();report();
     setStatus((gs.length-fb)+" of "+gs.length+" passages were rewritten by the model."+(fb?" "+fb+" were rejected by the safety check (last reason: "+lastReason+") and got the fast rules instead.":"")+" Read the result against your original before you use it.");
@@ -666,10 +686,18 @@ async function llmRun(){
   }finally{btn.textContent="Humanize it";updateCount()}
 }
 async function llmLine(u){
-  var b=$("line"),o=opts(selected),L=locks();b.disabled=true;b.textContent="Rewriting...";
+  var b=$("line"),o=opts(selected),L=locks(),gid=u.gid,orig=u.orig||u.src;
+  b.disabled=true;b.textContent="Rewriting...";
   try{
-    var r=await rewrite(u.src,o,L,"Rewrite this single sentence in a different way from: "+u.out);
-    if(r.text)u.out=r.text;
+    var cur=units.filter(function(x){return x.gid===gid}).map(function(x){return x.out}).join(" ");
+    var r=await rewrite(orig,o,L,"Use clearly different wording and sentence structure from this earlier version: "+cur,cur);
+    var parts=split(r.text);if(!parts.length)parts=[{src:r.text}];
+    var idx=units.findIndex(function(x){return x.gid===gid}),para=units[idx].para;
+    units=units.filter(function(x){return x.gid!==gid});
+    var ins=parts.map(function(p){return{src:p.src,out:p.src,para:para,ai:true,gid:gid,orig:orig}});
+    units.splice.apply(units,[idx,0].concat(ins));
+    selected=idx;
+    setStatus(r.text===cur?"No different safe wording was found for that line. Press Rephrase line again to retry.":(r.ai?"That line was rewritten by the model.":"The model's rewrite was rejected ("+lastReason+"), so the fast rules were used for that line."));
   }catch(e){setStatus("Could not rewrite that line: "+(e&&e.message?e.message:e))}
   finally{b.textContent="Rephrase line";render();report()}
 }
@@ -722,7 +750,7 @@ $("theme").addEventListener("click",function(){
   d.setAttribute("data-theme",dark?"light":"dark");
 });
 updateCount();
-window.__pw={transform:transform,split:split};
+window.__pw={transform:transform,split:split,valid:valid};
 })();
 </script>
 <script type="module" src="app.js"></script>

@@ -69,9 +69,9 @@ if (tf) {
       const out = await gen(messages, {
         max_new_tokens: (opts && opts.max_new_tokens) || 256,
         do_sample: true,
-        temperature: (opts && opts.temperature) || 0.8,
-        top_p: 0.9,
-        repetition_penalty: 1.1,
+        temperature: (opts && opts.temperature) || 0.5,
+        top_p: 0.85,
+        repetition_penalty: 1.05,
         return_full_text: false
       });
       let t = out[0].generated_text;
