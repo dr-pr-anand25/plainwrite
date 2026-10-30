@@ -581,9 +581,9 @@ function run(bump){
 /* ---------- in-browser language model ---------- */
 function engine(){return document.querySelector('input[name="eng"]:checked').value}
 function setStatus(t){$("status").textContent=t}
-var SYS="You rewrite text so it reads like a careful human wrote it. Keep the meaning, facts, numbers, names, abbreviations and technical terms unchanged. Change sentence structure and word choice, vary sentence length, use plain direct wording, and avoid stock AI phrases. Never use em dashes. Never add new claims. Output only the rewritten text.";
-var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nFurthermore, it is important to note that the system utilizes a robust architecture. The results demonstrate significant improvements in accuracy across 3 datasets.";
-var EX_OUT="The system has a solid architecture, and accuracy improved on all 3 datasets.";
+var SYS="You rewrite text so it reads like a careful human wrote it. Always rewrite: never return the input unchanged. Reword every sentence, reorder clauses, and merge or split sentences where natural. Keep the meaning, facts, numbers, names, abbreviations and technical terms exactly the same. Use plain direct wording and avoid stock AI phrases. Never use em dashes. Never add new claims. Output only the rewritten text.";
+var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nIt is important to note that machine learning is routinely proposed as an improvement to trading strategies. We test that proposition rigorously. Only 2 of 10 enhanced configurations outperform the baseline.";
+var EX_OUT="People keep suggesting that machine learning will improve trading strategies, so we put that claim through a hard test. Only 2 of 10 enhanced configurations beat the baseline.";
 function styleDesc(s){return{casual:"casual and conversational, contractions allowed",creative:"creative, vivid, varied rhythm",academic:"academic, precise and measured, no contractions",formal:"formal and professional, no contractions"}[s]}
 function lenDesc(l){return{short:"about 25% shorter, cutting filler",std:"about the same",long:"about 25% longer, adding natural connecting detail but no new facts"}[l]}
 function mkMessages(text,o,L,extra){
@@ -592,31 +592,34 @@ function mkMessages(text,o,L,extra){
 }
 function cleanOut(t){
   t=t.replace(/^\s*(?:here(?:'s| is)[^\n]*:|rewritten text:|text:)\s*/i,"").replace(/^["“']+|["”']+$/g,"");
-  t=t.replace(/\s*[—–]\s*/g,", ").replace(/\s*\n+\s*/g," ").replace(/\s{2,}/g," ").trim();
+  t=t.replace(/\s*—\s*/g,", ").replace(/\s+–\s+/g,", ").replace(/\s*\n+\s*/g," ").replace(/\s{2,}/g," ").trim();
   return t;
 }
-function protectedTokens(src,L){
-  var a=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(src.match(/\b[A-Z]{2,}[A-Za-z0-9\-]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[]);
-  return a.concat(L);
-}
+function wordSet(t){var m=t.toLowerCase().match(/[a-z0-9]+/g)||[],o={};m.forEach(function(w){o[w]=1});return o}
+function overlap(a,b){var A=wordSet(a),B=wordSet(b),n=0,k=0;for(var w in A){k++;if(B[w])n++}return k?n/k:1}
 function valid(src,out,o,L){
-  if(!out)return false;
-  var ws=words(src),wo=words(out),lo=o.len==="short"?0.35:(o.len==="long"?0.9:0.6),hi=o.len==="short"?1.15:(o.len==="long"?2.3:1.5);
-  if(wo<ws*lo||wo>ws*hi)return false;
-  if(out.toLowerCase().replace(/\W+/g," ")===src.toLowerCase().replace(/\W+/g," "))return false;
-  return protectedTokens(src,L).every(function(t){return out.indexOf(t)>-1});
+  if(!out)return"empty";
+  var ws=words(src),wo=words(out),lo=o.len==="short"?0.3:(o.len==="long"?0.8:0.5),hi=o.len==="short"?1.2:(o.len==="long"?2.5:1.7);
+  if(wo<ws*lo||wo>ws*hi)return"length";
+  if(overlap(src,out)>0.93&&Math.abs(wo-ws)<3)return"copy";
+  var nums=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(L);
+  for(var i=0;i<nums.length;i++)if(out.indexOf(nums[i])<0)return"number "+nums[i];
+  var low=out.toLowerCase(),ac=src.match(/\b[A-Z]{2,}[A-Za-z0-9]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[];
+  for(var j=0;j<ac.length;j++)if(low.indexOf(ac[j].toLowerCase())<0)return"term "+ac[j];
+  return"";
 }
 function rulesFallback(src,o,L,seed){
   return split(src).map(function(u,i){return transform(u.src,{style:o.style,len:o.len,idx:i},seed+i*31,L)}).join(" ");
 }
+var lastReason="";
 async function rewrite(src,o,L,extra){
-  var maxTok=Math.min(640,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
-  for(var a=0;a<2;a++){
-    try{
-      var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.7+0.2*a});
-      var out=cleanOut(raw);
-      if(valid(src,out,o,L))return{text:transform(out,{style:o.style,len:"std",idx:0,light:true},hash(out),L),ai:true};
-    }catch(e){if(a===1)throw e}
+  var maxTok=Math.min(512,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
+  for(var a=0;a<3;a++){
+    var raw=await window.PW_LLM.generate(mkMessages(src,o,L,extra),{max_new_tokens:maxTok,temperature:0.7+0.15*a});
+    var out=cleanOut(raw),why=valid(src,out,o,L);
+    console.log("[plainwrite] attempt "+(a+1)+(why?" rejected ("+why+")":" accepted"),{src:src,out:out});
+    if(!why)return{text:transform(out,{style:o.style,len:"std",idx:0,light:true},hash(out),L),ai:true};
+    lastReason=why;
   }
   return{text:rulesFallback(src,o,L,hash(src)+runSeed),ai:false};
 }
@@ -636,7 +639,7 @@ function groups(text){
   var us=split(text),res=[],cur=null;
   us.forEach(function(u){
     var w=words(u.src);
-    if(cur&&cur.para===u.para&&cur.w+w<=80){cur.src+=" "+u.src;cur.w+=w}
+    if(cur&&cur.para===u.para&&cur.w+w<=40){cur.src+=" "+u.src;cur.w+=w}
     else{cur={src:u.src,para:u.para,w:w};res.push(cur)}
   });
   return res;
@@ -655,7 +658,7 @@ async function llmRun(){
       parts.forEach(function(p){nu.push({src:p.src,out:p.src,para:gs[i].para,ai:true})});
     }
     units=nu;render();report();
-    setStatus(fb?("Done. "+fb+" of "+gs.length+" passages could not be rewritten safely (numbers or terms would change), so the rules were used for those."):"Done. Read the result against your original before you use it.");
+    setStatus((gs.length-fb)+" of "+gs.length+" passages were rewritten by the model."+(fb?" "+fb+" were rejected by the safety check (last reason: "+lastReason+") and got the fast rules instead.":"")+" Read the result against your original before you use it.");
   }catch(e){
     setStatus("The AI model failed ("+(e&&e.message?e.message:e)+"). Used the fast rules instead.");
     build();render();report();
