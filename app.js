@@ -5,7 +5,7 @@ const CDN = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1";
 
 const MODELS = [
   { id: "onnx-community/Qwen2.5-0.5B-Instruct", label: "Qwen2.5 0.5B: faster, about 0.5 GB", gpu: "q4f16", cpu: "q8", needsGPU: false },
-  { id: "onnx-community/Qwen2.5-1.5B-Instruct", label: "Qwen2.5 1.5B: better quality, about 1 GB, needs WebGPU", gpu: "q4f16", cpu: "q4", needsGPU: true }
+  { id: "onnx-community/Qwen2.5-1.5B-Instruct", label: "Qwen2.5 1.5B: needs a lot of memory, may fail to load", gpu: "q4f16", cpu: "q4", needsGPU: true }
 ];
 
 let tf = null;

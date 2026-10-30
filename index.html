@@ -433,7 +433,7 @@ function transform(sent,o,seed,locks){
     s=s.replace(re,function(m){held.push(m);return "\u0001"+(held.length-1)+"\u0001"});
   });
   AI_RE.forEach(function(x){s=s.replace(x[0],function(m){var v=pick(r,x[1]);if(v&&/,$/.test(m)&&!/,$/.test(v))v+=",";var t=cap(m,v);return /\s$/.test(m)&&t?t+" ":t})});
-  if(o.light){s=fixCaps(s.replace(/\s{2,}/g," ").trim());return s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]})}
+  if(o.light){s=fixCaps(s.replace(/\s*\u2014\s*/g,", ").replace(/\s{2,}/g," ").trim());return s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]})}
   var grp=(o.style==="casual"||o.style==="creative")?"c":"f";
   SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m){if(r()>0.75)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return cap(m,v)})});
   VERBS.forEach(function(v){if(v.g!==grp)return;s=s.replace(v.re,function(m){if(r()>0.7)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return cap(m,vph(pick(r,v.alts),k))})});
@@ -464,6 +464,7 @@ function transform(sent,o,seed,locks){
     }
   }
   s=s.replace(/\s{2,}/g," ").replace(/\s+([,.;!?])/g,"$1").replace(/,\s*,/g,",").trim();
+  s=s.replace(/\s*\u2014\s*/g,", ").replace(/\s+\u2013\s+/g,", ").replace(/,\s*,/g,",");
   s=fixCaps(s);
   /* clause reordering */
   var cm;
@@ -676,7 +677,6 @@ function initLLM(){
   var Lm=window.PW_LLM,sel=$("model");if(!Lm)return;
   sel.textContent="";
   Lm.models.forEach(function(m){var op=document.createElement("option");op.value=m.id;op.textContent=m.label;if(m.needsGPU&&!Lm.hasGPU)op.disabled=true;sel.appendChild(op)});
-  if(Lm.hasGPU&&Lm.models[1])sel.value=Lm.models[1].id;
   setStatus("AI engine ready. The model downloads once when you press Humanize it or Load model. "+(Lm.hasGPU?"Your browser supports WebGPU, so it will run on the GPU.":"No WebGPU here, so it will run on the CPU and be slower."));
 }
 window.addEventListener("pw-llm-ready",initLLM);
