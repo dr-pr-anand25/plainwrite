@@ -378,7 +378,7 @@ var AI=[
  ["subsequently",["then","later"]],
  ["in conclusion,?|to sum up,?|in summary,?",["so,","all in all,"]]
 ];
-var CASUAL=[["therefore,?",["so"]],["however,",["but","still,","that said,"]],["thus,?",["so"]],["merely",["just"]],["approximately",["about"]],["purchase",["buy"]],["assist",["help"]],["obtain",["get"]],["demonstrate",["show"]]];
+var CASUAL=[["therefore,",["so,"]],["however,",["but","still,","that said,"]],["thus,",["so,"]],["merely",["just"]],["approximately",["about"]],["purchase",["buy"]],["assist",["help"]],["obtain",["get"]],["demonstrate",["show"]]];
 var INTENS="(?:very|really|extremely|highly|incredibly|truly|quite|basically|essentially|simply)";
 var FLAGS=new RegExp("delve|tapestry|furthermore|moreover|additionally|utili[sz]|leverag|seamless|pivotal|crucial|testament|myriad|plethora|navigate the|unlock|elevate|foster|robust|cutting-edge|game-changer|in today['’]s|it is (?:important|worth)|in conclusion|in order to|realm|multifaceted|paramount|comprehensive|landscape","gi");
 var AI_RE=AI.map(function(r){return[new RegExp("\\b"+r[0]+(/(,\??|\\s\*)$/.test(r[0])?"":"\\b"),"gi"),r[1]]});
@@ -392,9 +392,9 @@ var SYN=[
  ["prior to",["before"]],["in spite of",["despite"]],["with (?:regard|respect) to",["regarding","on the subject of"]],
  ["(?:is|are) able to",["can"]],["ha(?:s|ve) the ability to",["can"]],
  ["due to",["because of","owing to"]],
- ["as a result,",["so,","because of this,"]],["consequently,",["so,","as a result,"]],
+ ["as a result,",["so,","because of this,"]],["consequently,",["so,","as a result,","hence,"]],
  ["for example,",["for instance,","say,"],"c"],["for instance,",["for example,"]],
- ["on the other hand,",["then again,","by contrast,"]],
+ ["on the other hand,",["however,","that said,","by contrast,"]],
  ["in the near future",["soon"]],["at this point in time",["now"]],["the fact that",["that"]],
  ["for the purpose of",["for"]],["rather than",["instead of"]],["whether or not",["whether"]],
  ["such as",["like"],"c"],["in addition to",["besides","alongside"]],["as well as",["along with","and"]],
@@ -402,7 +402,7 @@ var SYN=[
  ["shows",["demonstrates","indicates"],"f"],["show",["demonstrate","indicate"],"f"],
  ["helps",["assists"],"f"],["help",["assist"],"f"],["needs",["requires"],"f"],
  ["therefore,",["thus,","as a result,"],"f"],["so far",["to date"],"f"],
- ["important",["key","major"]],["essential",["vital","necessary"]],["difficult",["hard","tough"]],["challenging",["tough","demanding"]],
+ ["important",["key","major"]],["essential",["key","important","necessary"]],["difficult",["hard","tough"]],["challenging",["tough","demanding"]],
  ["numerous",["many","plenty of"]],["several",["a few","some"]],["many(?!\\s+of)",["plenty of","lots of"],"c"],["many(?!\\s+of)",["numerous","a great many"],"f"],
  ["huge",["enormous","massive"]],["enormous",["huge","vast"]],["big",["large","sizable"]],["fast",["quick","rapid"]],
  ["quickly",["rapidly","swiftly"]],["rapidly",["quickly","swiftly"]],["clearly",["plainly","evidently"]],["obviously",["clearly","plainly"]],
@@ -414,7 +414,22 @@ var SYN=[
  ["in contrast,",["by contrast,","on the flip side,"]],["at the same time",["meanwhile","in parallel"]],["a few",["some","a handful of"]],
  ["in the case of",["for"]],["the ability to",["the capacity to","the power to"]],["as a whole",["overall"]],["to a large extent",["largely"]],
  ["whereas",["while"]],["although",["though"]],["because",["since","as"],"c"],["in fact",["actually","in truth"]],["certain",["particular","specific"]],
- ["Against expectations,",["To our surprise,","Unexpectedly,"]],["Contrary to expectations,",["Surprisingly,","Unexpectedly,"]],
+ ["team",["group"]],["teams",["groups"]],["(?<!test |backtest |trading |sample |empirical )results(?!\\s+in\\b)",["findings"]],["dataset",["data set"]],["datasets",["data sets"]],
+ ["researchers",["scholars","academics"],"f"],["I think",["I believe"]],["hard to",["difficult to"]],["to find(?!\\s+out)",["to identify","to pinpoint"]],
+ ["and fixed",["and corrected"]],["lost money",["incurred losses"]],
+ ["sample size(?!\\s+of)",["size of the sample"]],["Compared with",["Compared to"]],["faster",["quicker"]],["dropped",["decreased","fell"]],
+ ["crucial role",["key role","vital role"]],["In conclusion,",["In summary,","To sum up,"]],["Additionally,",["Besides,","Also,","On top of that,"]],
+ ["However,",["Nevertheless,","Even so,"],"f"],["Finally,",["In the end,","Lastly,"]],["needs(?=\\s+(?:more|less|fewer|a|an|the|further|additional|some|much|little)\\b)",["requires","calls for"]],
+ ["sudden",["unexpected","abrupt"]],["was split",["was divided"]],["were split",["were divided"]],["are split",["are divided"]],["is split",["is divided"]],
+ ["test period",["testing period"]],["test periods",["testing periods"]],["test data",["testing data"]],["For this reason,",["Hence,","Therefore,"]],
+ ["genuine",["true","real","actual"]],["in most cases",["most of the time","in most instances"]],["Nevertheless,",["However,","Even so,"]],["Nonetheless,",["However,","Still,"]],
+ ["large amounts of",["huge amounts of","vast amounts of"]],["considerably",["substantially","markedly"]],["second half of the year",["latter part of the year"]],
+ ["As a consequence,",["As a result,","Consequently,"]],["new framework",["new approach"]],["we present",["we introduce","we put forward"]],["We present",["We introduce","We put forward"]],
+ ["serious",["critical","major"]],["around the world",["across the world","worldwide"]],["benefits",["advantages"]],["in recent years",["recently","lately"]],
+ ["find it difficult to",["struggle to"]],["company",["firm"]],["companies",["firms"]],["overseas",["foreign","international"]],["rose sharply",["jumped","climbed sharply"]],
+ ["is needed",["is required"]],["are needed",["are required"]],["To ensure",["In order to ensure"],"c"],["critical step",["key step","important step"]],["seriously",["severely","badly"]],
+ ["reliable",["dependable","trustworthy"]],["should be acknowledged",["should be noted","need to be recognized"]],["helpful",["useful","valuable"]],["remaining errors",["remaining mistakes"]],
+ ["In the present paper,",["In this paper,"]],["Against expectations,",["To our surprise,","Unexpectedly,"]],["Contrary to expectations,",["Surprisingly,","Unexpectedly,"]],
  ["Notably,",["Worth noting,","Of note,"]],["Importantly,",["Notably,","Above all,"]],["Interestingly,",["Curiously,","Oddly enough,"]],
  ["Specifically,",["In particular,","To be precise,"]],["Second,",["Next,"]],["Finally,",["Lastly,","To close,"]],["Ultimately,",["In the end,","At bottom,"]],
  ["First,",["To begin with,","First off,"],"c"],["Similarly,",["Likewise,","In the same way,"]],["Likewise,",["Similarly,"]],["Hence,",["So,","Therefore,"]],
@@ -423,7 +438,7 @@ var SYN=[
  ["has been shown to",["is known to","has been found to"]],["tend to",["are inclined to","often"],"c"],
  ["previously",["earlier","before"]],["recently",["lately","in recent times"]],["increasingly",["more and more","ever more"]],["indeed,",["in fact,","truly,"]],
  ["rigorous",["strict","thorough"]],["rigorously",["thoroughly","carefully"]],["substantial",["sizable","considerable"]],["considerable",["substantial","sizable"]],
- ["notable",["noteworthy","striking"]],["approach",["method","way"]],["approaches",["methods","ways"]],
+ ["notable",["noteworthy","striking"]],["approach",["method","technique"]],["approaches",["methods","techniques"]],
  ["method",["approach","technique"]],["methods",["approaches","techniques"]],["technique",["method","approach"]],["techniques",["methods","approaches"]],
  ["findings",["results","outcomes"]],["goal",["aim","objective"]],["goals",["aims","objectives"]],["issue",["problem","concern"]],["issues",["problems","concerns"]],
  ["challenge",["difficulty","hurdle"]],["challenges",["difficulties","hurdles"]],["advantage",["benefit","upside"]],["drawback",["downside","weakness"]],["drawbacks",["downsides","weaknesses"]],
@@ -444,7 +459,7 @@ var VERBS=[
  ["observe",["notice","see"],"c"],["perform",["carry out","do"],"c"],
  ["reduce",["cut","lower"],"c"],["emphasize",["stress"],"c"],["propose",["suggest"],"c"],["illustrate",["show"],"c"],
  ["try",["attempt"],"f"],["check",["verify","examine"],"f"],["build",["construct"],"f"],["buy",["purchase"],"f"],
- ["underperform",["trail","fall behind"]],["produce",["yield","generate"],"f"],["identify",["find","pinpoint"],"f"],["reduce",["lower","cut"],"f"],["lift",["raise","push up"]],["destroy",["wipe out","undermine"]],["exceed",["surpass"],"f"],["report",["describe","document"]],["survive",["hold up under","withstand"]],["begin",["start"],"f"],["outperform",["beat","do better than"]],["improve",["boost","raise"]],["enable",["let","allow"],"c"],["enable",["permit"],"f"],["lead to",["result in","produce"]],["result in",["lead to","produce"]],["depend on",["rely on","hinge on"]],["aim to",["seek to","try to"]],["seek to",["aim to","try to"]],["reflect",["mirror","show"]],["contain",["hold","include"]],["include",["cover","take in"]],["involve",["require","entail"]],["influence",["shape","affect"]],["affect",["influence","shape"]],["provide",["offer","give"]],["allow",["permit"]],["create",["build","produce"]],["suggest",["indicate","imply"]],
+ ["underperform",["trail","fall behind"]],["inspect",["examine","check"]],["identify",["determine","find"],"f"],["try",["attempt"]],["reach",["achieve","attain"]],["build",["develop","create"],"c"],["check",["confirm","validate"],"c"],["reduce",["minimize"],"f"],["produce",["yield","generate"],"f"],["identify",["find","pinpoint"],"f"],["reduce",["lower","cut"],"f"],["lift",["raise","push up"]],["destroy",["wipe out","undermine"]],["exceed",["surpass"],"f"],["report",["describe","document"]],["survive",["hold up under","withstand"]],["begin",["start"],"f"],["outperform",["beat","do better than"]],["improve",["boost","raise"]],["enable",["let","allow"],"c"],["enable",["permit"],"f"],["lead to",["result in","produce"]],["result in",["lead to","produce"]],["depend on",["rely on","hinge on"]],["aim to",["seek to","try to"]],["seek to",["aim to","try to"]],["reflect",["mirror","show"]],["contain",["hold","include"]],["include",["cover","take in"]],["involve",["require","entail"]],["influence",["shape","affect"]],["affect",["influence","shape"]],["provide",["offer","give"]],["allow",["permit"]],["create",["build","produce"]],["suggest",["indicate","imply"]],
  ["explain",["describe","spell out"]],["describe",["outline","explain"]],["discuss",["cover","talk about"]],["remove",["drop","strip out"]],
  ["combine",["merge","blend"]],["select",["choose","pick"]],["choose",["select","pick"]],["ensure",["guarantee","secure"]],["highlight",["stress","flag"]],
  ["compare",["weigh","set against"]],["address",["tackle","deal with"]],["explore",["look into","dig into"]],["rely on",["lean on","depend on"]],["focus on",["concentrate on","zero in on"]]
@@ -477,6 +492,8 @@ function transform(sent,o,seed,locks){
   var grp=(o.style==="casual"||o.style==="creative")?"c":"f";
   SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m,off,str){if(inMark(str,off)||r()>0.96)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return"\u0002"+cap(m,v)+"\u0003"})});
   VERBS.forEach(function(v){if(v.g&&v.g!==grp)return;s=s.replace(v.re,function(m,off,str){if(inMark(str,off)||r()>0.95)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return"\u0002"+cap(m,vph(pick(r,v.alts),k))+"\u0003"})});
+  s=s.replace(/(^|[\s(])(two|three|four|five|six|seven|eight|nine|ten|\u0001\d+\u0001) of (the )?(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\u0001\d+\u0001)(?![\w])/gi,function(m,pf,a,b,c){var off=arguments[arguments.length-2],str=arguments[arguments.length-1];if(inMark(str,off)||r()>0.92)return m;return pf+a+" \u0002out\u0003 of "+(b||"")+c});
+  s=s.replace(/(^|\s)over (two|three|four|five|six|seven|eight|nine|ten|\u0001\d+\u0001) (years|months|weeks|days|decades)\b/gi,function(m,pf,n,u){var off=arguments[arguments.length-2],str=arguments[arguments.length-1];if(inMark(str,off)||r()>0.85)return m;return pf+"over \u0002a period of\u0003 "+n+" "+u});
   if(o.style==="casual"||o.style==="creative"){CAS_RE.forEach(function(x){s=s.replace(x[0],function(m){return"\u0002"+cap(m,pick(r,x[1]))+"\u0003"})})}
   /* contractions */
   if(o.style==="academic"||o.style==="formal"){
