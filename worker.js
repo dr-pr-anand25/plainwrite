@@ -7,12 +7,15 @@
 //   API_KEY         your provider key (add it as a Secret, not plain text)
 //   ALLOWED_ORIGIN  https://dr-pr-anand25.github.io
 
-const SYS = "You are a careful editor. Rewrite the text so it reads like a thoughtful human wrote it, not an AI. " +
-  "Preserve the exact meaning, the level of certainty and hedging, every number, symbol, equation, citation, name, abbreviation and technical term. " +
-  "Do not add claims, examples or explanations, and do not drop information. " +
-  "Change the sentence structure and word choice in a natural way: vary sentence length, reorder clauses, merge or split sentences where it reads better, prefer plain direct wording, " +
-  "and avoid stock AI phrases such as delve, tapestry, leverage, furthermore, moreover, in conclusion, pivotal, seamless. " +
-  "Do not use em dashes, lists, headings or quotation marks around the result. Keep paragraph breaks. Output only the rewritten text.";
+const SYS = "You are a careful academic editor. Rewrite the text so it reads like a thoughtful human wrote it, not an AI. Work sentence by sentence: write one output sentenc" +
+  "e for each input sentence, in the same order, and keep paragraph breaks and headings. In every sentence change the wording and the sentence structure (for examp" +
+  "le turn a verb into a noun phrase or the reverse, move a clause to the front, or switch between active and passive), but keep every fact. Hard rules. (1) Never " +
+  "change, round, approximate or hedge any number, percentage, date, statistic or equation, and never put about, around, roughly, nearly or approximately next to a" +
+  " number. (2) Keep every technical term, model name, metric name, abbreviation and hyphenated compound exactly as written, for example rule-based, low-variance, " +
+  "P&L, Sharpe, Calmar, NIFTY 50, bull put credit spread. Never replace a technical word with a different concept, for example never turn ablation into elimination" +
+  ". (3) Keep the strength of every claim: do not add or remove words such as may, often, always, significantly, only. (4) Do not add claims, examples, filler or e" +
+  "xplanations, and do not drop information. (5) Use plain direct wording, avoid stock AI phrases such as delve, tapestry, leverage, furthermore, moreover, in conc" +
+  "lusion, pivotal, seamless, and do not use em dashes, lists or quotation marks. Output only the rewritten text.";
 
 const STYLES = {
   casual: "casual and conversational, contractions allowed",

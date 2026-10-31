@@ -414,7 +414,21 @@ var SYN=[
  ["in contrast,",["by contrast,","on the flip side,"]],["at the same time",["meanwhile","in parallel"]],["a few",["some","a handful of"]],
  ["in the case of",["for"]],["the ability to",["the capacity to","the power to"]],["as a whole",["overall"]],["to a large extent",["largely"]],
  ["whereas",["while"]],["although",["though"]],["because",["since","as"],"c"],["in fact",["actually","in truth"]],["certain",["particular","specific"]],
- ["main",["primary","chief"]],["major",["main","big"]],["recent",["latest","new"]],["ideal",["perfect","best"]],["simple",["easy","plain"]],["complex",["tricky","involved"],"c"],["complex",["intricate","sophisticated"],"f"]
+ ["Against expectations,",["To our surprise,","Unexpectedly,"]],["Contrary to expectations,",["Surprisingly,","Unexpectedly,"]],
+ ["Notably,",["Worth noting,","Of note,"]],["Importantly,",["Notably,","Above all,"]],["Interestingly,",["Curiously,","Oddly enough,"]],
+ ["Specifically,",["In particular,","To be precise,"]],["Second,",["Next,"]],["Finally,",["Lastly,","To close,"]],["Ultimately,",["In the end,","At bottom,"]],
+ ["First,",["To begin with,","First off,"],"c"],["Similarly,",["Likewise,","In the same way,"]],["Likewise,",["Similarly,"]],["Hence,",["So,","Therefore,"]],
+ ["For this reason,",["Because of this,","That is why,"]],["In this (?:paper|study),",["In this work,","Here,"]],["In this work,",["In this paper,","Here,"]],
+ ["we find that",["we see that","we observe that"]],["We find that",["We see that","We observe that"]],["we propose",["we put forward","we suggest"]],["We propose",["We put forward","We suggest"]],
+ ["has been shown to",["is known to","has been found to"]],["tend to",["are inclined to","often"],"c"],
+ ["previously",["earlier","before"]],["recently",["lately","in recent times"]],["increasingly",["more and more","ever more"]],["indeed,",["in fact,","truly,"]],
+ ["rigorous",["strict","thorough"]],["rigorously",["thoroughly","carefully"]],["substantial",["sizable","considerable"]],["considerable",["substantial","sizable"]],
+ ["notable",["noteworthy","striking"]],["approach",["method","way"]],["approaches",["methods","ways"]],
+ ["method",["approach","technique"]],["methods",["approaches","techniques"]],["technique",["method","approach"]],["techniques",["methods","approaches"]],
+ ["findings",["results","outcomes"]],["goal",["aim","objective"]],["goals",["aims","objectives"]],["issue",["problem","concern"]],["issues",["problems","concerns"]],
+ ["challenge",["difficulty","hurdle"]],["challenges",["difficulties","hurdles"]],["advantage",["benefit","upside"]],["drawback",["downside","weakness"]],["drawbacks",["downsides","weaknesses"]],
+ ["limitation",["shortcoming","weakness"]],["limitations",["shortcomings","weaknesses"]],["purpose",["aim","goal"]],["despite",["in spite of"]],["whereas",["while"]],
+ ["perhaps",["maybe"],"c"],["perhaps",["possibly"],"f"],["ultimately",["in the end","finally"]],["main",["primary","chief"]],["major",["main","big"]],["recent",["latest","new"]],["ideal",["perfect","best"]],["simple",["easy","plain"]],["complex",["tricky","involved"],"c"],["complex",["intricate","sophisticated"],"f"]
 ];
 var SYN_RE=SYN.map(function(x){return[new RegExp("\\b"+x[0]+(/(,\??|\\s\*)$/.test(x[0])?"":"\\b"),"gi"),x[1],x[2]||""]});
 var IRR={get:["get","gets","got","getting"],see:["see","sees","saw","seeing"],show:["show","shows","showed","showing"],run:["run","runs","ran","running"],build:["build","builds","built","building"],hit:["hit","hits","hit","hitting"],top:["top","tops","topped","topping"],find:["find","finds","found","finding"],make:["make","makes","made","making"],put:["put","puts","put","putting"],keep:["keep","keeps","kept","keeping"],"do":["do","does","did","doing"],set:["set","sets","set","setting"],think:["think","thinks","thought","thinking"],cut:["cut","cuts","cut","cutting"],go:["go","goes","went","going"],hold:["hold","holds","held","holding"]};
@@ -427,10 +441,10 @@ var VERBS=[
  ["determine",["work out","figure out"],"c"],["acquire",["get"],"c"],["reveal",["show"],"c"],["maintain",["keep"],"c"],
  ["achieve",["reach","hit"],"c"],["generate",["produce","create"],"c"],["evaluate",["assess","judge"],"c"],
  ["identify",["spot","pick out"],"c"],["constitute",["make up"],"c"],["consider",["think about"],"c"],
- ["observe",["notice","see"],"c"],["perform",["carry out","do"],"c"],["enhance",["boost","improve"],"c"],
+ ["observe",["notice","see"],"c"],["perform",["carry out","do"],"c"],
  ["reduce",["cut","lower"],"c"],["emphasize",["stress"],"c"],["propose",["suggest"],"c"],["illustrate",["show"],"c"],
  ["try",["attempt"],"f"],["check",["verify","examine"],"f"],["build",["construct"],"f"],["buy",["purchase"],"f"],
- ["improve",["boost","raise"]],["provide",["offer","give"]],["allow",["permit"]],["create",["build","produce"]],["suggest",["indicate","imply"]],
+ ["underperform",["trail","fall behind"]],["produce",["yield","generate"],"f"],["identify",["find","pinpoint"],"f"],["reduce",["lower","cut"],"f"],["lift",["raise","push up"]],["destroy",["wipe out","undermine"]],["exceed",["surpass"],"f"],["report",["describe","document"]],["survive",["hold up under","withstand"]],["begin",["start"],"f"],["outperform",["beat","do better than"]],["improve",["boost","raise"]],["enable",["let","allow"],"c"],["enable",["permit"],"f"],["lead to",["result in","produce"]],["result in",["lead to","produce"]],["depend on",["rely on","hinge on"]],["aim to",["seek to","try to"]],["seek to",["aim to","try to"]],["reflect",["mirror","show"]],["contain",["hold","include"]],["include",["cover","take in"]],["involve",["require","entail"]],["influence",["shape","affect"]],["affect",["influence","shape"]],["provide",["offer","give"]],["allow",["permit"]],["create",["build","produce"]],["suggest",["indicate","imply"]],
  ["explain",["describe","spell out"]],["describe",["outline","explain"]],["discuss",["cover","talk about"]],["remove",["drop","strip out"]],
  ["combine",["merge","blend"]],["select",["choose","pick"]],["choose",["select","pick"]],["ensure",["guarantee","secure"]],["highlight",["stress","flag"]],
  ["compare",["weigh","set against"]],["address",["tackle","deal with"]],["explore",["look into","dig into"]],["rely on",["lean on","depend on"]],["focus on",["concentrate on","zero in on"]]
@@ -461,8 +475,8 @@ function transform(sent,o,seed,locks){
   AI_RE.forEach(function(x){s=s.replace(x[0],function(m){var v=pick(r,x[1]);if(v&&/,$/.test(m)&&!/,$/.test(v))v+=",";var t=cap(m,v),mk=t?"\u0002"+t+"\u0003":t;return /\s$/.test(m)&&t?mk+" ":mk})});
   if(o.light){s=fixCaps(s.replace(/\s*\u2014\s*/g,", ").replace(/\s{2,}/g," ").trim());return s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]})}
   var grp=(o.style==="casual"||o.style==="creative")?"c":"f";
-  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m,off,str){if(inMark(str,off)||r()>0.93)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return"\u0002"+cap(m,v)+"\u0003"})});
-  VERBS.forEach(function(v){if(v.g&&v.g!==grp)return;s=s.replace(v.re,function(m,off,str){if(inMark(str,off)||r()>0.92)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return"\u0002"+cap(m,vph(pick(r,v.alts),k))+"\u0003"})});
+  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m,off,str){if(inMark(str,off)||r()>0.96)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return"\u0002"+cap(m,v)+"\u0003"})});
+  VERBS.forEach(function(v){if(v.g&&v.g!==grp)return;s=s.replace(v.re,function(m,off,str){if(inMark(str,off)||r()>0.95)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return"\u0002"+cap(m,vph(pick(r,v.alts),k))+"\u0003"})});
   if(o.style==="casual"||o.style==="creative"){CAS_RE.forEach(function(x){s=s.replace(x[0],function(m){return"\u0002"+cap(m,pick(r,x[1]))+"\u0003"})})}
   /* contractions */
   if(o.style==="academic"||o.style==="formal"){
@@ -639,7 +653,7 @@ function run(bump){
 /* ---------- in-browser language model ---------- */
 function engine(){return document.querySelector('input[name="eng"]:checked').value}
 function setStatus(t,err){var el=$("status");el.textContent=t;el.className="note"+(err?" err":"")}
-var SYS="You rewrite text so it reads like a careful human wrote it. Always rewrite: never return the input unchanged. Reword every sentence, reorder clauses, and merge or split sentences where natural. Keep the meaning, facts, numbers, names, abbreviations and technical terms exactly the same. Use plain direct wording and avoid stock AI phrases. Never use em dashes. Never add new claims. Output only the rewritten text.";
+var SYS="You are a careful academic editor. Rewrite the text so it reads like a thoughtful human wrote it, not an AI. Work sentence by sentence: write one output sentence for each input sentence, in the same order, and keep paragraph breaks and headings. In every sentence change the wording and the sentence structure (for example turn a verb into a noun phrase or the reverse, move a clause to the front, or switch between active and passive), but keep every fact. Hard rules. (1) Never change, round, approximate or hedge any number, percentage, date, statistic or equation, and never put about, around, roughly, nearly or approximately next to a number. (2) Keep every technical term, model name, metric name, abbreviation and hyphenated compound exactly as written, for example rule-based, low-variance, P&L, Sharpe, Calmar, NIFTY 50, bull put credit spread. Never replace a technical word with a different concept, for example never turn ablation into elimination. (3) Keep the strength of every claim: do not add or remove words such as may, often, always, significantly, only. (4) Do not add claims, examples, filler or explanations, and do not drop information. (5) Use plain direct wording, avoid stock AI phrases such as delve, tapestry, leverage, furthermore, moreover, in conclusion, pivotal, seamless, and do not use em dashes, lists or quotation marks. Output only the rewritten text.";
 var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nIt is important to note that machine learning is routinely proposed as an improvement to trading strategies.";
 var EX_OUT="People keep suggesting that machine learning will make trading strategies better.";
 function styleDesc(s){return{casual:"casual and conversational, contractions allowed",creative:"creative, vivid, varied rhythm",academic:"academic, precise and measured, no contractions",formal:"formal and professional, no contractions"}[s]}
@@ -679,6 +693,10 @@ function valid(src,out,o,L){
   if(!sane(out,src))return"garbled";
   var nums=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(L);
   for(var i=0;i<nums.length;i++)if(out.indexOf(nums[i])<0)return"number "+nums[i];
+  var hed=/\b(?:about|around|roughly|nearly|approximately|almost)\s+[$€£]?\d/gi;
+  if((out.match(hed)||[]).length>(src.match(hed)||[]).length)return"hedged a number";
+  var cps=src.match(/\b[a-z]+(?:-[a-z]+)+\b/gi)||[],lw=out.toLowerCase();
+  if(cps.length>=3&&cps.filter(function(c){return lw.indexOf(c.toLowerCase())<0}).length>cps.length*0.5)return"technical terms changed";
   var low=out.toLowerCase(),ac=(src.match(/\b[A-Z]{2,}[A-Za-z0-9]*|\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*/g)||[]).filter(function(t){return t.length>=4});
   for(var j=0;j<ac.length;j++)if(low.indexOf(ac[j].toLowerCase())<0)return"term "+ac[j];
   return"";
@@ -771,7 +789,7 @@ async function cloudGen(text,o,L,extra,temp){
   if(!res.ok){var m="";try{m=(await res.json()).error}catch(e){}throw new Error("server "+res.status+(m?": "+m:""))}
   var j=await res.json();return String(j.text||"");
 }
-var CSYS="You are a careful editor. Rewrite the text so it reads like a thoughtful human wrote it, not an AI. Preserve the exact meaning, the level of certainty and hedging, every number, symbol, equation, citation, name, abbreviation and technical term. Do not add claims, examples or explanations, and do not drop information. Change the sentence structure and word choice in a natural way: vary sentence length, reorder clauses, merge or split sentences where it reads better, prefer plain direct wording, and avoid stock AI phrases such as delve, tapestry, leverage, furthermore, moreover, in conclusion, pivotal, seamless. Do not use em dashes, lists, headings or quotation marks around the result. Keep paragraph breaks. Output only the rewritten text.";
+var CSYS="You are a careful academic editor. Rewrite the text so it reads like a thoughtful human wrote it, not an AI. Work sentence by sentence: write one output sentence for each input sentence, in the same order, and keep paragraph breaks and headings. In every sentence change the wording and the sentence structure (for example turn a verb into a noun phrase or the reverse, move a clause to the front, or switch between active and passive), but keep every fact. Hard rules. (1) Never change, round, approximate or hedge any number, percentage, date, statistic or equation, and never put about, around, roughly, nearly or approximately next to a number. (2) Keep every technical term, model name, metric name, abbreviation and hyphenated compound exactly as written, for example rule-based, low-variance, P&L, Sharpe, Calmar, NIFTY 50, bull put credit spread. Never replace a technical word with a different concept, for example never turn ablation into elimination. (3) Keep the strength of every claim: do not add or remove words such as may, often, always, significantly, only. (4) Do not add claims, examples, filler or explanations, and do not drop information. (5) Use plain direct wording, avoid stock AI phrases such as delve, tapestry, leverage, furthermore, moreover, in conclusion, pivotal, seamless, and do not use em dashes, lists or quotation marks. Output only the rewritten text.";
 function cloudMessages(text,o,L,extra){
   var st={casual:"casual and conversational, contractions allowed",creative:"creative, vivid, varied rhythm",academic:"academic, precise and measured, no contractions",formal:"formal and professional, no contractions"}[o.style];
   var ln={short:"about 25% shorter, cutting filler but no facts",std:"about the same length",long:"about 25% longer, adding natural connecting words but no new facts"}[o.len];
