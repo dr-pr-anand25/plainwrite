@@ -401,7 +401,20 @@ var SYN=[
  ["demonstrates",["shows"],"c"],["demonstrated",["showed"],"c"],["demonstrating",["showing"],"c"],["demonstrate",["show"],"c"],
  ["shows",["demonstrates","indicates"],"f"],["show",["demonstrate","indicate"],"f"],
  ["helps",["assists"],"f"],["help",["assist"],"f"],["needs",["requires"],"f"],
- ["therefore,",["thus,","as a result,"],"f"],["so far",["to date"],"f"]
+ ["therefore,",["thus,","as a result,"],"f"],["so far",["to date"],"f"],
+ ["important",["key","major"]],["essential",["vital","necessary"]],["difficult",["hard","tough"]],["challenging",["tough","demanding"]],
+ ["numerous",["many","plenty of"]],["several",["a few","some"]],["many(?!\\s+of)",["plenty of","lots of"],"c"],["many(?!\\s+of)",["numerous","a great many"],"f"],
+ ["huge",["enormous","massive"]],["enormous",["huge","vast"]],["big",["large","sizable"]],["fast",["quick","rapid"]],
+ ["quickly",["rapidly","swiftly"]],["rapidly",["quickly","swiftly"]],["clearly",["plainly","evidently"]],["obviously",["clearly","plainly"]],
+ ["often",["frequently","regularly"]],["usually",["typically","generally"]],["generally",["usually","broadly"]],["mainly",["chiefly","largely"]],
+ ["strong",["solid","powerful"]],["good",["solid","strong"],"f"],["good",["decent","solid"],"c"],["bad",["poor","weak"]],
+ ["however",["but","though"],"c"],["a variety of",["a range of","several"]],["a wide range of",["many different","a broad set of"]],
+ ["in general,",["broadly,","by and large,"]],["overall,",["all in all,","on the whole,"]],["in particular",["especially"]],
+ ["with the exception of",["except for","apart from"]],["in order for",["for"]],["thanks to",["because of"]],["by means of",["through","using"]],
+ ["in contrast,",["by contrast,","on the flip side,"]],["at the same time",["meanwhile","in parallel"]],["a few",["some","a handful of"]],
+ ["in the case of",["for"]],["the ability to",["the capacity to","the power to"]],["as a whole",["overall"]],["to a large extent",["largely"]],
+ ["whereas",["while"]],["although",["though"]],["because",["since","as"],"c"],["in fact",["actually","in truth"]],["certain",["particular","specific"]],
+ ["main",["primary","chief"]],["major",["main","big"]],["recent",["latest","new"]],["ideal",["perfect","best"]],["simple",["easy","plain"]],["complex",["tricky","involved"],"c"],["complex",["intricate","sophisticated"],"f"]
 ];
 var SYN_RE=SYN.map(function(x){return[new RegExp("\\b"+x[0]+(/(,\??|\\s\*)$/.test(x[0])?"":"\\b"),"gi"),x[1],x[2]||""]});
 var IRR={get:["get","gets","got","getting"],see:["see","sees","saw","seeing"],show:["show","shows","showed","showing"],run:["run","runs","ran","running"],build:["build","builds","built","building"],hit:["hit","hits","hit","hitting"],top:["top","tops","topped","topping"],find:["find","finds","found","finding"],make:["make","makes","made","making"],put:["put","puts","put","putting"],keep:["keep","keeps","kept","keeping"],"do":["do","does","did","doing"],set:["set","sets","set","setting"],think:["think","thinks","thought","thinking"],cut:["cut","cuts","cut","cutting"],go:["go","goes","went","going"],hold:["hold","holds","held","holding"]};
@@ -416,8 +429,12 @@ var VERBS=[
  ["identify",["spot","pick out"],"c"],["constitute",["make up"],"c"],["consider",["think about"],"c"],
  ["observe",["notice","see"],"c"],["perform",["carry out","do"],"c"],["enhance",["boost","improve"],"c"],
  ["reduce",["cut","lower"],"c"],["emphasize",["stress"],"c"],["propose",["suggest"],"c"],["illustrate",["show"],"c"],
- ["try",["attempt"],"f"],["check",["verify","examine"],"f"],["build",["construct"],"f"],["buy",["purchase"],"f"]
-].map(function(v){var fr=[0,1,2,3].map(function(k){return vf(v[0],k)});return{forms:fr,alts:v[1],g:v[2],re:new RegExp("\\b(?:"+fr.join("|")+")\\b","gi")}});
+ ["try",["attempt"],"f"],["check",["verify","examine"],"f"],["build",["construct"],"f"],["buy",["purchase"],"f"],
+ ["improve",["boost","raise"]],["provide",["offer","give"]],["allow",["permit"]],["create",["build","produce"]],["suggest",["indicate","imply"]],
+ ["explain",["describe","spell out"]],["describe",["outline","explain"]],["discuss",["cover","talk about"]],["remove",["drop","strip out"]],
+ ["combine",["merge","blend"]],["select",["choose","pick"]],["choose",["select","pick"]],["ensure",["guarantee","secure"]],["highlight",["stress","flag"]],
+ ["compare",["weigh","set against"]],["address",["tackle","deal with"]],["explore",["look into","dig into"]],["rely on",["lean on","depend on"]],["focus on",["concentrate on","zero in on"]]
+].map(function(v){var fr=[0,1,2,3].map(function(k){return /\s/.test(v[0])?vph(v[0],k):vf(v[0],k)});return{forms:fr,alts:v[1],g:v[2],re:new RegExp("\\b(?:"+fr.join("|")+")\\b","gi")}});
 var CONTR=[["do not","don't"],["does not","doesn't"],["did not","didn't"],["is not","isn't"],["are not","aren't"],["was not","wasn't"],["were not","weren't"],["cannot","can't"],["will not","won't"],["would not","wouldn't"],["should not","shouldn't"],["could not","couldn't"],["have not","haven't"],["has not","hasn't"],["it is","it's"],["that is","that's"],["there is","there's"],["they are","they're"],["we are","we're"],["you are","you're"],["let us","let's"],["what is","what's"]];
 var EXPAND=[["can['’]t","cannot"],["won['’]t","will not"],["don['’]t","do not"],["doesn['’]t","does not"],["didn['’]t","did not"],["isn['’]t","is not"],["aren['’]t","are not"],["wasn['’]t","was not"],["weren['’]t","were not"],["wouldn['’]t","would not"],["shouldn['’]t","should not"],["couldn['’]t","could not"],["haven['’]t","have not"],["hasn['’]t","has not"],["it['’]s","it is"],["that['’]s","that is"],["there['’]s","there is"],["they['’]re","they are"],["we['’]re","we are"],["you['’]re","you are"],["let['’]s","let us"]];
 var CONNECT={
@@ -428,6 +445,8 @@ var CONNECT={
 var STARTERS={the:1,this:1,that:1,these:1,those:1,it:1,they:1,we:1,you:1,many:1,some:1,most:1,each:1,every:1,there:1,when:1,if:1,while:1,as:1};
 
 function cap(m,r){return m.charAt(0)===m.charAt(0).toUpperCase()&&/[a-z]/i.test(m.charAt(0))?r.charAt(0).toUpperCase()+r.slice(1):r}
+function inMark(str,off){var a=str.lastIndexOf("\u0002",off),b=str.lastIndexOf("\u0003",off);return a>b}
+function fixAn(s){return s.replace(/\b(a|an)(\s+\u0002?)([a-z])([a-z]*)/gi,function(m,ar,sp,c,rest){var w=(c+rest).toLowerCase(),vowel=/^[aeiou]/.test(w)&&!/^(uni|use|user|usu|eu|one|once)/.test(w)||/^(hour|honest|heir)/.test(w);var na=vowel?"an":"a";if(ar[0]===ar[0].toUpperCase())na=na[0].toUpperCase()+na.slice(1);return na+sp+c+rest})}
 function pick(r,a){return a[Math.floor(r()*a.length)]}
 function fixCaps(s){return s.replace(/^(\W*)([a-z])/,function(_,p,c){return p+c.toUpperCase()}).replace(/([.!?]["”\']?\s+\u0002*)([a-z])/g,function(_,p,c){return p+c.toUpperCase()})}
 
@@ -442,8 +461,8 @@ function transform(sent,o,seed,locks){
   AI_RE.forEach(function(x){s=s.replace(x[0],function(m){var v=pick(r,x[1]);if(v&&/,$/.test(m)&&!/,$/.test(v))v+=",";var t=cap(m,v),mk=t?"\u0002"+t+"\u0003":t;return /\s$/.test(m)&&t?mk+" ":mk})});
   if(o.light){s=fixCaps(s.replace(/\s*\u2014\s*/g,", ").replace(/\s{2,}/g," ").trim());return s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]})}
   var grp=(o.style==="casual"||o.style==="creative")?"c":"f";
-  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m){if(r()>0.75)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return"\u0002"+cap(m,v)+"\u0003"})});
-  VERBS.forEach(function(v){if(v.g!==grp)return;s=s.replace(v.re,function(m){if(r()>0.7)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return"\u0002"+cap(m,vph(pick(r,v.alts),k))+"\u0003"})});
+  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m,off,str){if(inMark(str,off)||r()>0.93)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return"\u0002"+cap(m,v)+"\u0003"})});
+  VERBS.forEach(function(v){if(v.g&&v.g!==grp)return;s=s.replace(v.re,function(m,off,str){if(inMark(str,off)||r()>0.92)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return"\u0002"+cap(m,vph(pick(r,v.alts),k))+"\u0003"})});
   if(o.style==="casual"||o.style==="creative"){CAS_RE.forEach(function(x){s=s.replace(x[0],function(m){return"\u0002"+cap(m,pick(r,x[1]))+"\u0003"})})}
   /* contractions */
   if(o.style==="academic"||o.style==="formal"){
@@ -493,6 +512,7 @@ function transform(sent,o,seed,locks){
       s=c+" "+s.charAt(0).toLowerCase()+s.slice(1);
     }
   }
+  s=fixAn(s);
   s=s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]});
   return s;
 }
@@ -762,10 +782,16 @@ function ollamaMessages(text,o,L,extra){
   m.splice(1,0,{role:"user",content:EX_IN},{role:"assistant",content:EX_OUT});
   return m;
 }
+async function ollamaDiag(){
+  var running=false;
+  try{await fetch("http://localhost:11434/",{mode:"no-cors"});running=true}catch(e){}
+  if(running)return"Ollama is running, but it refuses requests from this website. In PowerShell run: setx OLLAMA_ORIGINS \"https://dr-pr-anand25.github.io\"  then quit Ollama from the system tray (right-click its icon, Quit), open it again, and retry.";
+  return"The browser could not reach Ollama at localhost:11434. Open http://localhost:11434 in a new tab: it should say \"Ollama is running\". If it does, Chrome may be blocking this website from reaching your computer: click the icon left of the address bar, open Site settings, allow Local network access (or Private network access), and reload. If the tab does not load, start Ollama.";
+}
 async function ollamaGen(text,o,L,extra,temp){
   var m=($("omodel").value||"qwen2.5:7b").trim(),res;
   try{res=await fetch("http://localhost:11434/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:m,messages:ollamaMessages(text,o,L,extra),temperature:temp,stream:false})})}
-  catch(e){throw new Error("cannot reach Ollama on this computer. Is it running, and did you set OLLAMA_ORIGINS? See the README")}
+  catch(e){throw new Error(await ollamaDiag())}
   if(!res.ok){var t="";try{t=(await res.text()).slice(0,160)}catch(e){}throw new Error("Ollama "+res.status+": "+t)}
   var j=await res.json();return String((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"");
 }
@@ -776,7 +802,7 @@ async function ollamaTest(){
     var names=((await res.json()).models||[]).map(function(x){return x.name});
     var has=names.some(function(n){return n===m||n.split(":")[0]===m||n===m+":latest"});
     setStatus(has?"Connected. The model "+m+" is installed. Press Humanize it.":"Ollama is running, but "+m+" is not installed. Open PowerShell and run: ollama pull "+m+(names.length?"  (installed now: "+names.join(", ")+")":""));
-  }catch(e){setStatus("Cannot reach Ollama on this computer. Install and start it, then set OLLAMA_ORIGINS to this website address and restart Ollama (see the README). If Chrome asks to allow access to devices on your network, choose Allow.")}
+  }catch(e){setStatus(await ollamaDiag(),true)}
 }
 async function cloudLine(u){
   var b=$("line"),o=opts(selected),L=locks();b.disabled=true;b.textContent="Rewriting...";
