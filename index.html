@@ -13,7 +13,7 @@
 :root{
   --bg:#f6f7fb; --surface:#ffffff; --fg:#151a2c; --muted:#5a6178; --line:#dfe2ee;
   --accent:#2f4bd8; --accent-fg:#ffffff; --accent-soft:#e6eafc;
-  --flag:#a15c00; --flag-soft:#fdf0d8; --ok:#1c7a4b;
+  --flag:#a15c00; --flag-soft:#fdf0d8; --ok:#1c7a4b; --hl:#fff0a0;
   --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
   --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -21,11 +21,11 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1120; --surface:#161a2e; --fg:#e9ecf8; --muted:#9aa2c0; --line:#2a3050;
   --accent:#8196ff; --accent-fg:#0e1120; --accent-soft:#222a55;
-  --flag:#f0b25a; --flag-soft:#3a2d12; --ok:#6fd6a0; color-scheme:dark}}
+  --flag:#f0b25a; --flag-soft:#3a2d12; --ok:#6fd6a0; --hl:#6b5600; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1120; --surface:#161a2e; --fg:#e9ecf8; --muted:#9aa2c0; --line:#2a3050;
   --accent:#8196ff; --accent-fg:#0e1120; --accent-soft:#222a55;
-  --flag:#f0b25a; --flag-soft:#3a2d12; --ok:#6fd6a0; color-scheme:dark}
+  --flag:#f0b25a; --flag-soft:#3a2d12; --ok:#6fd6a0; --hl:#6b5600; color-scheme:dark}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
@@ -147,6 +147,8 @@ body{margin:0}
 [hidden]{display:none!important}
 img{max-width:100%}
 .engine{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center}
+.sw{background:var(--hl);color:inherit;border-radius:3px;padding:0 2px}
+.note.err{color:var(--flag);font-weight:600}
 .engine select{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);padding:7px 10px;font:inherit;font-size:.92rem;max-width:100%}
 .engine input[type=text]{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);padding:7px 10px;font:inherit;font-size:.92rem;width:11rem;max-width:100%}
 .barwrap{flex:1 1 100%;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
@@ -427,7 +429,7 @@ var STARTERS={the:1,this:1,that:1,these:1,those:1,it:1,they:1,we:1,you:1,many:1,
 
 function cap(m,r){return m.charAt(0)===m.charAt(0).toUpperCase()&&/[a-z]/i.test(m.charAt(0))?r.charAt(0).toUpperCase()+r.slice(1):r}
 function pick(r,a){return a[Math.floor(r()*a.length)]}
-function fixCaps(s){return s.replace(/^(\W*)([a-z])/,function(_,p,c){return p+c.toUpperCase()}).replace(/([.!?]["”']?\s+)([a-z])/g,function(_,p,c){return p+c.toUpperCase()})}
+function fixCaps(s){return s.replace(/^(\W*)([a-z])/,function(_,p,c){return p+c.toUpperCase()}).replace(/([.!?]["”\']?\s+\u0002*)([a-z])/g,function(_,p,c){return p+c.toUpperCase()})}
 
 /* ---------- transform one sentence ---------- */
 function transform(sent,o,seed,locks){
@@ -437,12 +439,12 @@ function transform(sent,o,seed,locks){
     var re=new RegExp("\\b"+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","gi");
     s=s.replace(re,function(m){held.push(m);return "\u0001"+(held.length-1)+"\u0001"});
   });
-  AI_RE.forEach(function(x){s=s.replace(x[0],function(m){var v=pick(r,x[1]);if(v&&/,$/.test(m)&&!/,$/.test(v))v+=",";var t=cap(m,v);return /\s$/.test(m)&&t?t+" ":t})});
+  AI_RE.forEach(function(x){s=s.replace(x[0],function(m){var v=pick(r,x[1]);if(v&&/,$/.test(m)&&!/,$/.test(v))v+=",";var t=cap(m,v),mk=t?"\u0002"+t+"\u0003":t;return /\s$/.test(m)&&t?mk+" ":mk})});
   if(o.light){s=fixCaps(s.replace(/\s*\u2014\s*/g,", ").replace(/\s{2,}/g," ").trim());return s.replace(/\u0001(\d+)\u0001/g,function(_,n){return held[+n]})}
   var grp=(o.style==="casual"||o.style==="creative")?"c":"f";
-  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m){if(r()>0.75)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return cap(m,v)})});
-  VERBS.forEach(function(v){if(v.g!==grp)return;s=s.replace(v.re,function(m){if(r()>0.7)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return cap(m,vph(pick(r,v.alts),k))})});
-  if(o.style==="casual"||o.style==="creative"){CAS_RE.forEach(function(x){s=s.replace(x[0],function(m){return cap(m,pick(r,x[1]))})})}
+  SYN_RE.forEach(function(x){if(x[2]&&x[2]!==grp)return;s=s.replace(x[0],function(m){if(r()>0.75)return m;var v=pick(r,x[1]);if(/,$/.test(m)&&!/,$/.test(v))v+=",";return"\u0002"+cap(m,v)+"\u0003"})});
+  VERBS.forEach(function(v){if(v.g!==grp)return;s=s.replace(v.re,function(m){if(r()>0.7)return m;var k=v.forms.indexOf(m.toLowerCase());if(k<0)return m;return"\u0002"+cap(m,vph(pick(r,v.alts),k))+"\u0003"})});
+  if(o.style==="casual"||o.style==="creative"){CAS_RE.forEach(function(x){s=s.replace(x[0],function(m){return"\u0002"+cap(m,pick(r,x[1]))+"\u0003"})})}
   /* contractions */
   if(o.style==="academic"||o.style==="formal"){
     EXPAND.forEach(function(p){s=s.replace(new RegExp("\\b"+p[0]+"\\b","gi"),function(m){return cap(m,p[1])})});
@@ -503,12 +505,40 @@ function split(text){
   paras.forEach(function(p,pi){
     var s=p.replace(/\s*\n\s*/g," ").trim();
     if(!s)return;
-    s.split(/(?<=[.!?])\s+(?=[A-Z"“(\u0001])/).forEach(function(x){if(x.trim())res.push({src:x.trim(),para:pi})});
+    s.split(/(?<=[.!?])\s+(?=[A-Z"“(\u0001\u0002])/).forEach(function(x){if(x.trim())res.push({src:x.trim(),para:pi})});
   });
   return res;
 }
 function opts(i){return{style:document.querySelector('input[name="style"]:checked').value,len:document.querySelector('input[name="len"]:checked').value,idx:i}}
 function locks(){return $("terms").value.split(",").map(function(t){return t.trim()}).filter(Boolean)}
+function sw(s){return String(s).replace(/[\u0002\u0003]/g,"")}
+function normW(w){return w.toLowerCase().replace(/^[^a-z0-9]+|[^a-z0-9]+$/g,"")}
+function fillUnit(sp,u){
+  var out=sw(u.out),ref=sw(u.orig||u.src||"");
+  if(!ref||ref===out){sp.textContent=out;return}
+  var ot=out.split(/(\s+)/),rt=ref.split(/\s+/).map(normW).filter(Boolean),ow=[];
+  ot.forEach(function(t){if(t&&!/^\s+$/.test(t))ow.push(normW(t))});
+  var n=ow.length,m=rt.length,i,j;
+  if(n*m>90000){sp.textContent=out;return}
+  var dp=[];for(i=0;i<=n;i++)dp.push(new Array(m+1).fill(0));
+  for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)dp[i][j]=(ow[i]&&ow[i]===rt[j])?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  var keep={};i=0;j=0;
+  while(i<n&&j<m){if(ow[i]&&ow[i]===rt[j]){keep[i]=1;i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++}
+  sp.textContent="";var wi=0;
+  ot.forEach(function(t){
+    if(!t)return;
+    if(/^\s+$/.test(t)){sp.appendChild(document.createTextNode(t));return}
+    var changed=ow[wi]&&!keep[wi];wi++;
+    if(changed){var mk=document.createElement("mark");mk.className="sw";mk.textContent=t;sp.appendChild(mk)}
+    else sp.appendChild(document.createTextNode(t));
+  });
+}
+function addMarked(parent,str){
+  var d=0,buf="";
+  function flush(){if(!buf)return;if(d>0){var m=document.createElement("mark");m.className="sw";m.textContent=buf;parent.appendChild(m)}else parent.appendChild(document.createTextNode(buf));buf=""}
+  for(var i=0;i<str.length;i++){var c=str.charAt(i);if(c==="\u0002"){flush();d++}else if(c==="\u0003"){flush();d=Math.max(0,d-1)}else buf+=c}
+  flush();
+}
 function words(t){var m=t.trim().match(/\S+/g);return m?m.length:0}
 function countFlags(t){var m=t.match(FLAGS);return m?m.length:0}
 
@@ -543,7 +573,7 @@ function plain(){
   var out=[],last=-1,cur="";
   units.forEach(function(u){
     if(last!==-1&&u.para!==last){out.push(cur);cur=""}
-    cur+=(cur?" ":"")+u.out;last=u.para;
+    cur+=(cur?" ":"")+sw(u.out);last=u.para;
   });
   if(cur)out.push(cur);
   return out.join("\n\n");
@@ -554,7 +584,7 @@ function render(){
   units.forEach(function(u,i){
     if(p===null||u.para!==last){p=document.createElement("p");box.appendChild(p);last=u.para}
     var sp=document.createElement("span");
-    sp.className="u"+(i===selected?" sel":"");sp.textContent=u.out;sp.dataset.i=i;sp.tabIndex=0;
+    sp.className="u"+(i===selected?" sel":"");if(u.ai)fillUnit(sp,u);else addMarked(sp,u.out);sp.dataset.i=i;sp.tabIndex=0;
     sp.setAttribute("role","button");sp.setAttribute("aria-label","Select sentence to rephrase");
     p.appendChild(sp);p.appendChild(document.createTextNode(" "));
   });
@@ -567,6 +597,8 @@ function report(){
   function chip(t,c){var e=document.createElement("span");e.className="chip "+c;e.textContent=t;rep.appendChild(e)}
   chip("Stock phrases flagged: "+a+" in, "+b+" out",b<a||a===0?"good":"bad");
   chip(words($("in").value)+" → "+words(plain())+" words","good");
+  if(lastFail)chip("AI engine failed, Fast rules used","bad");
+  if(units.some(function(u){return /\u0002/.test(u.out)})){var y=document.createElement("mark");y.className="sw chip";y.textContent="Yellow = swapped words";rep.appendChild(y)}
   var n=document.createElement("span");n.className="note";
   n.textContent=a===0?"No telltale phrases found in your text. Wording and sentence structure were still adjusted.":"The count covers a fixed list of phrases AI drafts overuse. It is not a detector score.";
   rep.appendChild(n);
@@ -579,14 +611,14 @@ function updateCount(){
 }
 function run(bump){
   if(bump)runSeed++;
-  selected=-1;
+  selected=-1;lastFail="";
   if(engine()==="cloud"||engine()==="ollama"||(engine()==="ai"&&window.PW_LLM)){llmRun();return}
   build();render();report();
 }
 
 /* ---------- in-browser language model ---------- */
 function engine(){return document.querySelector('input[name="eng"]:checked').value}
-function setStatus(t){$("status").textContent=t}
+function setStatus(t,err){var el=$("status");el.textContent=t;el.className="note"+(err?" err":"")}
 var SYS="You rewrite text so it reads like a careful human wrote it. Always rewrite: never return the input unchanged. Reword every sentence, reorder clauses, and merge or split sentences where natural. Keep the meaning, facts, numbers, names, abbreviations and technical terms exactly the same. Use plain direct wording and avoid stock AI phrases. Never use em dashes. Never add new claims. Output only the rewritten text.";
 var EX_IN="Style: casual and conversational.\nLength: about the same.\n\nText:\nIt is important to note that machine learning is routinely proposed as an improvement to trading strategies.";
 var EX_OUT="People keep suggesting that machine learning will make trading strategies better.";
@@ -623,7 +655,7 @@ function valid(src,out,o,L){
   if(!out)return"empty";
   var ws=words(src),wo=words(out),lo=o.len==="short"?0.25:(o.len==="long"?0.7:0.4),hi=o.len==="short"?1.3:(o.len==="long"?2.6:2);
   if(wo<ws*lo||wo>ws*hi)return"length";
-  if(overlap(src,out)>0.93&&Math.abs(wo-ws)<3)return"copy";
+  if((ws>=8&&overlap(src,out)>0.93)||(overlap(src,out)>0.93&&Math.abs(wo-ws)<3))return"copy";
   if(!sane(out,src))return"garbled";
   var nums=(src.match(/\d+(?:[.,]\d+)*/g)||[]).concat(L);
   for(var i=0;i<nums.length;i++)if(out.indexOf(nums[i])<0)return"number "+nums[i];
@@ -634,7 +666,7 @@ function valid(src,out,o,L){
 function rulesFallback(src,o,L,seed){
   return split(src).map(function(u,i){return transform(u.src,{style:o.style,len:o.len,idx:i},seed+i*31,L)}).join(" ");
 }
-var lastReason="";
+var lastReason="",lastFail="";
 async function rewrite(src,o,L,extra,avoid){
   var maxTok=Math.min(512,Math.ceil(words(src)*1.45*(o.len==="long"?1.8:1.3))+24);
   for(var a=0;a<(engine()==="ollama"?2:3);a++){
@@ -646,7 +678,7 @@ async function rewrite(src,o,L,extra,avoid){
     lastReason=why;
   }
   var seed=hash(src)+runSeed,t="";
-  for(var k=0;k<10;k++){t=rulesFallback(src,o,L,seed+k*997);if(!avoid||t!==avoid)break}
+  for(var k=0;k<10;k++){t=rulesFallback(src,o,L,seed+k*997);if(!avoid||sw(t)!==avoid)break}
   return{text:t,ai:false};
 }
 async function loadModel(){
@@ -672,12 +704,12 @@ function groups(text,lim){lim=lim||0;
 }
 async function llmRun(){
   var btn=$("run"),L=locks(),o=opts(0),text=$("in").value,gs=groups(text,engine()==="cloud"?110:(engine()==="ollama"?60:0)),fb=0;
-  btn.disabled=true;$("rerun").disabled=true;btn.textContent="Working...";
+  lastFail="";btn.disabled=true;$("rerun").disabled=true;btn.textContent="Working...";
   try{
     if(engine()==="ai")await loadModel();
     var nu=[];
     for(var i=0;i<gs.length;i++){
-      setStatus("Rewriting passage "+(i+1)+" of "+gs.length+"...");
+      setStatus("Rewriting passage "+(i+1)+" of "+gs.length+"..."+(engine()==="ollama"?" This can take a minute per passage on a CPU.":""));
       var r=await rewrite(gs[i].src,o,L);
       if(!r.ai)fb++;
       var parts=split(r.text);if(!parts.length)parts=[{src:r.text}];
@@ -686,15 +718,21 @@ async function llmRun(){
     units=nu;render();report();
     setStatus((gs.length-fb)+" of "+gs.length+" passages were rewritten by the model."+(fb?" "+fb+" were rejected by the safety check (last reason: "+lastReason+") and got the fast rules instead.":"")+" Read the result against your original before you use it.");
   }catch(e){
-    setStatus("The AI engine failed ("+(e&&e.message?e.message:e)+"). Used the fast rules instead.");
-    build();render();report();
+    lastFail=(e&&e.message?e.message:String(e));
+    if(engine()==="ai"){setStatus("The AI engine failed ("+lastFail+"). Used the fast rules instead.",true);build();render();report();}
+    else{
+      units=[];selected=-1;lastFail="";
+      setStatus("Nothing was changed because the "+(engine()==="ollama"?"connection to Ollama":"cloud server")+" failed: "+(e&&e.message?e.message:e)+". Fix that, or switch Engine to Fast rules for a quick pass.",true);
+      $("out").textContent="No text was produced. Read the red message above the text boxes.";$("report").className="report";
+      $("copy").disabled=true;$("rerun").disabled=true;$("line").disabled=true;
+    }
   }finally{btn.textContent="Humanize it";updateCount()}
 }
 async function llmLine(u){
   var b=$("line"),o=opts(selected),L=locks(),gid=u.gid,orig=u.orig||u.src;
   b.disabled=true;b.textContent="Rewriting...";
   try{
-    var cur=units.filter(function(x){return x.gid===gid}).map(function(x){return x.out}).join(" ");
+    var cur=units.filter(function(x){return x.gid===gid}).map(function(x){return sw(x.out)}).join(" ");
     var r=await rewrite(orig,o,L,"Use clearly different wording and sentence structure from this earlier version: "+cur,cur);
     var parts=split(r.text);if(!parts.length)parts=[{src:r.text}];
     var idx=units.findIndex(function(x){return x.gid===gid}),para=units[idx].para;
@@ -702,7 +740,7 @@ async function llmLine(u){
     var ins=parts.map(function(p){return{src:p.src,out:p.src,para:para,ai:true,gid:gid,orig:orig}});
     units.splice.apply(units,[idx,0].concat(ins));
     selected=idx;
-    setStatus(r.text===cur?"No different safe wording was found for that line. Press Rephrase line again to retry.":(r.ai?"That line was rewritten by the model.":"The model's rewrite was rejected ("+lastReason+"), so the fast rules were used for that line."));
+    setStatus(sw(r.text)===cur?"No different safe wording was found for that line. Press Rephrase line again to retry.":(r.ai?"That line was rewritten by the model.":"The model's rewrite was rejected ("+lastReason+"), so the fast rules were used for that line."));
   }catch(e){setStatus("Could not rewrite that line: "+(e&&e.message?e.message:e))}
   finally{b.textContent="Rephrase line";render();report()}
 }
@@ -719,9 +757,14 @@ function cloudMessages(text,o,L,extra){
   var ln={short:"about 25% shorter, cutting filler but no facts",std:"about the same length",long:"about 25% longer, adding natural connecting words but no new facts"}[o.len];
   return[{role:"system",content:CSYS},{role:"user",content:"Style: "+st+".\nLength: "+ln+".\n"+(L.length?"Keep these terms exactly as written: "+L.join(", ")+".\n":"")+(extra?extra+"\n":"")+"\nText:\n"+text}];
 }
+function ollamaMessages(text,o,L,extra){
+  var m=cloudMessages(text,o,L,extra);
+  m.splice(1,0,{role:"user",content:EX_IN},{role:"assistant",content:EX_OUT});
+  return m;
+}
 async function ollamaGen(text,o,L,extra,temp){
   var m=($("omodel").value||"qwen2.5:7b").trim(),res;
-  try{res=await fetch("http://localhost:11434/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:m,messages:cloudMessages(text,o,L,extra),temperature:temp,stream:false})})}
+  try{res=await fetch("http://localhost:11434/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:m,messages:ollamaMessages(text,o,L,extra),temperature:temp,stream:false})})}
   catch(e){throw new Error("cannot reach Ollama on this computer. Is it running, and did you set OLLAMA_ORIGINS? See the README")}
   if(!res.ok){var t="";try{t=(await res.text()).slice(0,160)}catch(e){}throw new Error("Ollama "+res.status+": "+t)}
   var j=await res.json();return String((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"");
@@ -738,7 +781,7 @@ async function ollamaTest(){
 async function cloudLine(u){
   var b=$("line"),o=opts(selected),L=locks();b.disabled=true;b.textContent="Rewriting...";
   try{
-    var r=await rewrite(u.out,o,L,"Reword this single sentence differently from the current wording. Keep the same meaning.",u.out);
+    var r=await rewrite(sw(u.out),o,L,"Reword this single sentence differently from the current wording. Keep the same meaning.",sw(u.out));
     u.out=r.text;
     setStatus(r.ai?"That sentence was rewritten by the cloud model.":"The cloud rewrite was rejected ("+lastReason+"), so the fast rules were used for that sentence.");
   }catch(e){setStatus("Could not rewrite that sentence: "+(e&&e.message?e.message:e))}
